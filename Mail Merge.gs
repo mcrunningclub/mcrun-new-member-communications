@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-THIS FILE HAS BEEN MODIFIED BY ANDREY GONZALEZ AS FOLLOWING
+THIS FILE HAS BEEN MODIFIED BY ANDREY GONZALEZ AS FOLLOWING:
 - Reconfigured data retrieval of new member registrations
 - Removed `onOpen()` and menu creation for script executions
 - Deleted redundant comments
@@ -26,13 +26,6 @@ THIS FILE HAS BEEN MODIFIED BY ANDREY GONZALEZ AS FOLLOWING
   * Changed scope of helper functions to project-wide
 */
 
-
-/**
- * Change these to match the column names you are using for email 
- * recipient addresses and email sent column.
-*/
-const RECIPIENT_COL  = "Recipient";
-const EMAIL_SENT_COL = "Email Sent";
 
 /**
  * Sends emails from sheet data.
@@ -58,34 +51,28 @@ function sendEmail(memberInformation) {
   const placeholder = Object.keys(memberInformation);
 
   // Gets the index of the column named 'Email Status' (Assumes header names are unique)
-  const emailSentColIdx = placeholder.indexOf(EMAIL_SENT_COL);
+  const emailSentColIdx = placeholder.indexOf(COL_MAP.STATUS_EMAIL);
 
   // Converts 2d array into an object array
   // See https://stackoverflow.com/a/22917499/1027723
   // For a pretty version, see https://mashe.hawksey.info/?p=17869/#comment-184945
   const obj = data.map(r => (placeholder.reduce((o, k, i) => (o[k] = r[i] || '', o), {})));
 
-  // Creates an array to record sent emails
-  const out = [];
-
   // Loops through all the rows of data
   obj.forEach(function(row, rowIdx){
     // Only sends emails if email_sent cell is blank and not hidden by a filter
-    if (row[EMAIL_SENT_COL] == ''){
+    if (row[COL_MAP.STATUS_EMAIL] == ''){
       try {
         const msgObj = fillInTemplateFromObject_(emailTemplate.message, row);
 
         // See https://developers.google.com/apps-script/reference/gmail/gmail-app#sendEmail(String,String,String,Object)
         // If you need to send emails with unicode/emoji characters change GmailApp for MailApp
         // Uncomment advanced parameters as needed (see docs for limitations)
-        GmailApp.sendEmail(row[RECIPIENT_COL], msgObj.subject, msgObj.text, {
+        GmailApp.sendEmail(row[COL_MAP.EMAIL], msgObj.subject, msgObj.text, {
           htmlBody: msgObj.html,
-          // bcc: 'a.bcc@email.com',
-          // cc: 'a.cc@email.com',
-          // from: 'an.alias@email.com',
-          // name: 'name of the sender',
-          // replyTo: 'a.reply@email.com',
-          // noReply: true, // if the email should be sent from a generic no-reply email address (not available to gmail.com users)
+          from: 'mcrunningclub@ssmu.ca',
+          name: 'McRUN',
+          replyTo: 'mcrunningclub@ssmu.ca',
           attachments: emailTemplate.attachments,
           inlineImages: emailTemplate.inlineImages
         });
@@ -96,10 +83,12 @@ function sendEmail(memberInformation) {
         out.push([e.message]);
       }
     } else {
-      out.push([row[EMAIL_SENT_COL]]);
+      out.push([row[COL_MAP.STATUS_EMAIL]]);
     }
   });
 }
+
+
 /**
  * Get a Gmail draft message by matching the subject line.
  * @param {string} subject_line to search for draft message
