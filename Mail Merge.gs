@@ -19,170 +19,125 @@ THIS FILE HAS BEEN MODIFIED BY ANDREY GONZALEZ AS FOLLOWING:
 - Reconfigured data retrieval of new member registrations
 - Removed `onOpen()` and menu creation for script executions
 - Deleted redundant comments
+- Renamed variables using camelCase
 
-- Modifications of `sendEmails()`:
+- Modifications of `sendEmails`:
   * Removed browser prompt
   * Modified parameters to target row instead of sheet-wide
   * Changed scope of helper functions to project-wide
 */
 
 
-/**
- * Sends emails from sheet data.
- * 
- * @author  Martin Hawksey (2022)
- * @update  [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) (2025)
- * 
- * @param {Object} memberInformation  Information to populate email draft
- * @return {string}  Status of sending email
-*/
-function sendEmail(memberInformation) {
-  // Gets the draft Gmail message to use as a template
-  const emailTemplate = getGmailTemplateFromDrafts_(subjectLine);
-
-  // Gets the data from the passed sheet
-  const dataRange = sheet.getDataRange();
-  // Fetches displayed values for each row in the Range HT Andrew Roberts 
-  // https://mashe.hawksey.info/2020/04/a-bulk-email-mail-merge-with-gmail-and-google-sheets-solution-evolution-using-v8/#comment-187490
-  // @see https://developers.google.com/apps-script/reference/spreadsheet/range#getdisplayvalues
-  const data = dataRange.getDisplayValues();
-
-  // Get header with placeholder names
-  const placeholder = Object.keys(memberInformation);
-
-  // Gets the index of the column named 'Email Status' (Assumes header names are unique)
-  const emailSentColIdx = placeholder.indexOf(COL_MAP.STATUS_EMAIL);
-
-  // Converts 2d array into an object array
-  // See https://stackoverflow.com/a/22917499/1027723
-  // For a pretty version, see https://mashe.hawksey.info/?p=17869/#comment-184945
-  const obj = data.map(r => (placeholder.reduce((o, k, i) => (o[k] = r[i] || '', o), {})));
-
-  // Loops through all the rows of data
-  obj.forEach(function(row, rowIdx){
-    // Only sends emails if email_sent cell is blank and not hidden by a filter
-    if (row[COL_MAP.STATUS_EMAIL] == ''){
-      try {
-        const msgObj = fillInTemplateFromObject_(emailTemplate.message, row);
-
-        // See https://developers.google.com/apps-script/reference/gmail/gmail-app#sendEmail(String,String,String,Object)
-        // If you need to send emails with unicode/emoji characters change GmailApp for MailApp
-        // Uncomment advanced parameters as needed (see docs for limitations)
-        GmailApp.sendEmail(row[COL_MAP.EMAIL], msgObj.subject, msgObj.text, {
-          htmlBody: msgObj.html,
-          from: 'mcrunningclub@ssmu.ca',
-          name: 'McRUN',
-          replyTo: 'mcrunningclub@ssmu.ca',
-          attachments: emailTemplate.attachments,
-          inlineImages: emailTemplate.inlineImages
-        });
-        // Edits cell to record email sent date
-        out.push([new Date()]);
-      } catch(e) {
-        // modify cell to record error
-        out.push([e.message]);
-      }
-    } else {
-      out.push([row[COL_MAP.STATUS_EMAIL]]);
-    }
+// Example function provided by Google
+// See 
+function inlineImage() {
+  const googleLogoUrl = 'https://www.gstatic.com/images/branding/googlelogo/1x/googlelogo_color_74x24dp.png';
+  const youtubeLogoUrl = 'https://developers.google.com/youtube/images/YouTube_logo_standard_white.png';
+  const googleLogoBlob = UrlFetchApp.fetch(googleLogoUrl).getBlob().setName('googleLogoBlob');
+  const youtubeLogoBlob = UrlFetchApp.fetch(youtubeLogoUrl).getBlob().setName('youtubeLogoBlob');
+  MailApp.sendEmail({
+    to: 'andreysebastian10.g@gmail.com',
+    subject: 'Logos',
+    htmlBody: 'inline Google Logo<img src=\'cid:googleLogo\'> images! <br>' +
+      'inline YouTube Logo <img src=\'cid:youtubeLogo\'>',
+    inlineImages: {
+      googleLogo: googleLogoBlob,
+      youtubeLogo: youtubeLogoBlob,
+    },
   });
 }
 
 
-/**
- * Get a Gmail draft message by matching the subject line.
- * @param {string} subject_line to search for draft message
- * @return {object} containing the subject, plain and html message body and attachments
-*/
-function getGmailTemplateFromDrafts_(subject_line){
+function cachePngOnce() {
+  //cacheBlobToProperties_('1ctHsQstsoHVyCH7XcbkUNjPEka9zV9L6', 'emailHeaderBlob');
+  //cacheBlobToProperties_('1Qxqz9oEZCMfgFYTltRyTXk492OGCuAfo', 'linktreeLogoBlob');
+  //cacheBlobToProperties_('1rg72NxBtCAzQsKhCRx_Fb0azzoD8ztZ-', 'stravaLogoBlob');
+}
+
+
+function cacheBlobToProperties_(fileId, blobName) {
+  const blob = DriveApp.getFileById(fileId).getBlob();
+  const encodedBlob = Utilities.base64Encode(blob.getBytes());
+  PropertiesService.getScriptProperties().setProperty(blobName, encodedBlob);
+  console.log(`${blobName} cached in properties!`);
+}
+
+
+function getBlobFromProperties_(blobKey) {
+  const encodedBlob = PropertiesService.getScriptProperties().getProperty(blobKey);
+  if (encodedBlob) {
+    return Utilities.newBlob(Utilities.base64Decode(encodedBlob), 'image/png', blobKey);
+  }
+  throw new Error(`Blob ${blobKey} not found. Please add to script properties.`);
+}
+
+
+function generateHtmlFromDraft(subjectLine = 'Samosa Sale: Registration Link', fileName = 'samosa-email-html') {
+  const emailTemplate = getGmailTemplateFromDrafts(subjectLine);
+  const msgObj = fillInTemplateFromObject_(emailTemplate.message, {});
+  DriveApp.createFile(fileName, msgObj.html);
+}
+
+
+function testRuntime() {
+  const recipient = 'andrey.gonzalez@mail.mcgill.ca';
+  const startTime = new Date().getTime();
+
+  // Runtime if using DriveApp call : 1200ms
+  // If caching images in script properties once: 550 ms
+  sendSamosaEmailFromHTML(recipient, 'Test 4 samosa sale');
+
+  //sendSamosaEmail();    // around 3000ms
+  
+  // Record the end time
+  const endTime = new Date().getTime();
+  
+  // Calculate the runtime in milliseconds
+  const runtime = endTime - startTime;
+  
+  // Log the runtime
+  Logger.log(`Function runtime: ${runtime} ms`);
+}
+
+
+function sendSamosaEmailFromHTML(recipient, subject) {
   try {
-    // Get the target draft, then message object
-    const drafts = GmailApp.getDrafts();
-    const draft = drafts.filter(subjectFilter_(subject_line))[0];
-    const msg = draft.getMessage();
+    const TEMPLATE_NAME = 'Samosa Email';
+    const CLUB_EMAIL = 'mcrunningclub@ssmu.ca';
+    const CLUB_NAME = 'McGill Students Running Club';
 
-    // Handles inline images and attachments so they can be included in the merge
-    // Based on https://stackoverflow.com/a/65813881/1027723
-    // Gets all attachments and inline image attachments
-    const allInlineImages = draft.getMessage().getAttachments({includeInlineImages: true,includeAttachments:false});
-    const attachments = draft.getMessage().getAttachments({includeInlineImages: false});
-    const htmlBody = msg.getBody(); 
+    // Prepare the HTML body from the template
+    const template = HtmlService.createTemplateFromFile(TEMPLATE_NAME);
+    template.THIS_YEAR = new Date().getFullYear();
 
-    // Creates an inline image object with the image name as key 
-    // (can't rely on image index as array based on insert order)
-    const img_obj = allInlineImages.reduce((obj, i) => (obj[i.getName()] = i, obj) ,{});
+    // Returns string content from populated html template
+    const emailBodyHTML = template.evaluate().getContent();
 
-    //Regexp searches for all img string positions with cid
-    const imgexp = RegExp('<img.*?src="cid:(.*?)".*?alt="(.*?)"[^\>]+>', 'g');
-    const matches = [...htmlBody.matchAll(imgexp)];
+    // Retrieve cached blobs
+    const inlineImages = {
+      emailHeader: getBlobFromProperties_('emailHeaderBlob'),
+      linktreeLogo: getBlobFromProperties_('linktreeLogoBlob'),
+      stravaLogo: getBlobFromProperties_('stravaLogoBlob'),
+      
+      // DriveApp call too expensive, better to cache in store
+      //emailHeader : DriveApp.getFileById('1ctHsQstsoHVyCH7XcbkUNjPEka9zV9L6').getBlob().setName('emailHeaderBlob'),
+    };
 
-    //Initiates the allInlineImages object
-    const inlineImagesObj = {};
-    // built an inlineImagesObj from inline image matches
-    matches.forEach(match => inlineImagesObj[match[1]] = img_obj[match[2]]);
+    // Create message object
+    const message = {
+      to: recipient,
+      subject: subject,
+      from: CLUB_EMAIL,
+      name: CLUB_NAME,
+      replyTo: CLUB_EMAIL,
+      htmlBody: emailBodyHTML,
+      inlineImages: inlineImages,
+    };
 
-    return {message: {subject: subject_line, text: msg.getPlainBody(), html:htmlBody}, 
-            attachments: attachments, inlineImages: inlineImagesObj };
-  } catch(e) {
-    throw new Error("Oops - can't find Gmail draft");
+    MailApp.sendEmail(message);
+    console.log(`Email sent successfully to ${recipient}`);
+  } catch (error) {
+    console.error(`Error sending email: ${error}`);
   }
-}
-
-
-
-
-
-
-
-/**
-   * Filter draft objects with the matching subject linemessage by matching the subject line.
-   * @param {string} subject_line to search for draft message
-   * @return {object} GmailDraft object
-  */
-  function subjectFilter_(subject_line){
-    return function(element) {
-      if (element.getMessage().getSubject() === subject_line) {
-        return element;
-      }
-    }
-  }
-
-
-/**
- * Escape cell data to make JSON safe
- * @see https://stackoverflow.com/a/9204218/1027723
- * @param {string} str to escape JSON special characters from
- * @return {string} escaped string
-*/
-function escapeData_(str) {
-  return str
-    .replace(/[\\]/g, '\\\\')
-    .replace(/[\"]/g, '\\\"')
-    .replace(/[\/]/g, '\\/')
-    .replace(/[\b]/g, '\\b')
-    .replace(/[\f]/g, '\\f')
-    .replace(/[\n]/g, '\\n')
-    .replace(/[\r]/g, '\\r')
-    .replace(/[\t]/g, '\\t');
-};
-
-
-/**
- * Fill template string with data object
- * @see https://stackoverflow.com/a/378000/1027723
- * @param {string} template string containing {{}} markers which are replaced with data
- * @param {object} data object used to replace {{}} markers
- * @return {object} message replaced with data
-*/
-function fillInTemplateFromObject_(template, data) {
-  // We have two templates one for plain text and the html body
-  // Stringifing the object means we can do a global replace
-  let template_string = JSON.stringify(template);
-
-  // Token replacement
-  template_string = template_string.replace(/{{[^{}]+}}/g, key => {
-    return escapeData_(data[key.replace(/[{}]+/g, "")] || "");
-  });
-  return  JSON.parse(template_string);
 }
 
