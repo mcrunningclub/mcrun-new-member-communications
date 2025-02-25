@@ -102,7 +102,7 @@ function sendWelcomeEmailInRow(row = LITERAL_SHEET.getLastRow()) {
 
   // Try to send email and record status
   try {
-    const returnStatus = sendEmail(memberInformation);
+    const returnStatus = sendWelcomeEmail_(memberInformation);
 
     // Update the status of email for new member
     const currentTime = Utilities.formatDate(new Date(), TIMEZONE, '[dd-MMM HH:mm:ss]');
@@ -118,6 +118,58 @@ function sendWelcomeEmailInRow(row = LITERAL_SHEET.getLastRow()) {
 }
 
 
+function sendWelcomeEmail_(memberInformation) {
+  try {
+    const TEMPLATE_NAME = 'Welcome Email';
+    const CLUB_EMAIL = 'mcrunningclub@ssmu.ca';
+    const CLUB_NAME = 'McGill Students Running Club';
+    const SUBJECT_LINE = 'Hi from McRUN 👋';
+
+    // Prepare the HTML body from the template
+    const template = HtmlService.createTemplateFromFile(TEMPLATE_NAME);
+    
+    template.THIS_YEAR = new Date().getFullYear();
+    template.PASS_URL = memberInformation.DIGITAL_PASS_URL;
+    template.FIRST_NAME = memberInformation.FIRST_NAME;
+
+    template.LINKTREE_CID = 'linktreeLogo';
+    template.HEADER_CID = 'emailHeader';
+    template.STRAVA_CID = 'stravaLogo';
+
+    // Returns string content from populated html template
+    const emailBodyHTML = template.evaluate().getContent();
+
+    // Retrieve cached blobs
+    const inlineImages = {
+      emailHeader: getBlobFromProperties_('emailHeaderBlob'),
+      linktreeLogo: getBlobFromProperties_('linktreeLogoBlob'),
+      stravaLogo: getBlobFromProperties_('stravaLogoBlob'),
+    };
+
+    // Create message object
+    const message = {
+      to: memberInformation.EMAIL,
+      subject: SUBJECT_LINE,
+      from: CLUB_EMAIL,
+      name: CLUB_NAME,
+      replyTo: CLUB_EMAIL,
+      htmlBody: emailBodyHTML,
+      inlineImages: inlineImages,
+    };
+
+    MailApp.sendEmail(message);
+
+  } catch(e) {
+    // Log and return error
+    console.log(`(sendEmail) ${e.message}`);
+    throw new Error(e);
+  }
+  // Return success message
+  return {message: 'Successfully sent!', isError : false};
+}
+
+
+
 /**
  * Sends email using member information.
  * 
@@ -127,7 +179,7 @@ function sendWelcomeEmailInRow(row = LITERAL_SHEET.getLastRow()) {
  * @param {{key:value<string>}} memberInformation  Information to populate email draft
  * @return {{message:string, isError:bool}}  Status of sending email.
 */
-function sendEmail(memberInformation) {
+function sendEmail_(memberInformation) {
   // Gets the draft Gmail message to use as a template
   const subjectLine = DRAFT_SUBJECT_LINE;
   const emailTemplate = getGmailTemplateFromDrafts(subjectLine);
@@ -336,10 +388,4 @@ function escapeData_(str) {
     .replace(/[\n]/g, '\\n')
     .replace(/[\r]/g, '\\r')
     .replace(/[\t]/g, '\\t');
-}
-
-function temp() {
-  const t = Utilities.formatDate(new Date(), TIMEZONE, '[dd-MMM HH:mm:ss]');
-
-  Logger.log(t + typeof(t));
 }

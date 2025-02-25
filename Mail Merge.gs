@@ -48,9 +48,9 @@ function inlineImage() {
 }
 
 
-function cachePngOnce() {
+function cacheBlobToStore() {
   //cacheBlobToProperties_('1ctHsQstsoHVyCH7XcbkUNjPEka9zV9L6', 'emailHeaderBlob');
-  //cacheBlobToProperties_('1Qxqz9oEZCMfgFYTltRyTXk492OGCuAfo', 'linktreeLogoBlob');
+  cacheBlobToProperties_('1Im1c4-20Sx1xLlGgWKkTxXU9OXTKct8I', 'linktreeLogoBlob');
   //cacheBlobToProperties_('1rg72NxBtCAzQsKhCRx_Fb0azzoD8ztZ-', 'stravaLogoBlob');
 }
 
@@ -72,7 +72,10 @@ function getBlobFromProperties_(blobKey) {
 }
 
 
-function generateHtmlFromDraft(subjectLine = 'Samosa Sale: Registration Link', fileName = 'samosa-email-html') {
+function generateHtmlFromDraft() {
+  const subjectLine = 'Hi from McRUN';
+  const fileName = 'welcome-email-html';
+
   const emailTemplate = getGmailTemplateFromDrafts(subjectLine);
   const msgObj = fillInTemplateFromObject_(emailTemplate.message, {});
   DriveApp.createFile(fileName, msgObj.html);
@@ -85,7 +88,7 @@ function testRuntime() {
 
   // Runtime if using DriveApp call : 1200ms
   // If caching images in script properties once: 550 ms
-  sendSamosaEmailFromHTML(recipient, 'Test 4 samosa sale');
+  sendSamosaEmailFromHTML(recipient, 'Test 5 samosa sale');
 
   //sendSamosaEmail();    // around 3000ms
   
@@ -108,6 +111,12 @@ function sendSamosaEmailFromHTML(recipient, subject) {
 
     // Prepare the HTML body from the template
     const template = HtmlService.createTemplateFromFile(TEMPLATE_NAME);
+
+    // Populate placeholders
+    template.LINKTREE_CID = 'linktreeLogo';
+    template.HEADER_CID = 'emailHeader';
+    template.STRAVA_CID = 'stravaLogo';
+    template.REGISTRATION_LINK = 'https://mcgill.ca/x/i4T';
     template.THIS_YEAR = new Date().getFullYear();
 
     // Returns string content from populated html template
