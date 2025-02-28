@@ -30,7 +30,7 @@ THIS FILE HAS BEEN MODIFIED BY ANDREY GONZALEZ AS FOLLOWING:
 
 // Example function provided by Google
 // See 
-function inlineImage() {
+function inlineImage_() {
   const googleLogoUrl = 'https://www.gstatic.com/images/branding/googlelogo/1x/googlelogo_color_74x24dp.png';
   const youtubeLogoUrl = 'https://developers.google.com/youtube/images/YouTube_logo_standard_white.png';
   const googleLogoBlob = UrlFetchApp.fetch(googleLogoUrl).getBlob().setName('googleLogoBlob');
@@ -73,8 +73,8 @@ function getBlobFromProperties_(blobKey) {
 
 
 function generateHtmlFromDraft() {
-  const subjectLine = 'Hi from McRUN';
-  const fileName = 'welcome-email-html';
+  const subjectLine = 'Welcome to Our Running Club';
+  const fileName = 'welcome-email-html-feb-28';
 
   const emailTemplate = getGmailTemplateFromDrafts(subjectLine);
   const msgObj = fillInTemplateFromObject_(emailTemplate.message, {});
