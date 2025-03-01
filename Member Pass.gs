@@ -16,7 +16,7 @@ function createPassFile(passInfo) {
   passInfo['cYear'] = Utilities.formatDate(today, TIMEZONE, 'yyyy');
 
   // Make a copy to edit
-  const fileDate = Utilities.formatDate(today, TIMEZONE, 'yyyyMMdd');
+  const fileDate = Utilities.formatDate(today, TIMEZONE, 'MMdd\'-\'HHmmss');
   const copyRef = template.makeCopy(`${memberName}-McRun-Pass-${fileDate}`, passFolder);
   const copyID = copyRef.getId();
   const copyFilePtr = SlidesApp.openById(copyID);
@@ -55,39 +55,34 @@ function createPassFile(passInfo) {
 
   // Create download link for member
   return `https://docs.google.com/presentation/d/${copyID}/export/png`;   // Download link for user
-
-
-  const token = ScriptApp.getOAuthToken();
-  const response = UrlFetchApp.fetch(exportUrl, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      muteHttpExceptions: true,
-    },
-  });
-
-  // Save the PNG file to the folder
-  const blob = response.getBlob();
-  //const fileDate = Utilities.formatDate(today, TIMEZONE, 'yyyyMMdd');
-  const file = passFolder.createFile(blob).setName(`${memberName}-McRun-Pass-${fileDate}.png`);
-  
-  // Set permissions to general to allow downloading
-  file.setSharing(DriveApp.Access.ANYONE, DriveApp.Permission.VIEW);
-  
-
-  // Moves the file to the trash
-  copyRef.setTrashed(true);
-  return file.getDownloadUrl();
 }
 
 
-function testPass() {
-  /**
-   * 3:46:30 AM	Info	https://docs.google.com/presentation/d/1zYTdKOvjqb90KwjhmcZxiqS-UlnWFO61EDZIqxhm-VQ/export/png
-   * 3:46:35 AM	Info	https://drive.google.com/uc?id=1aLeRsQ25FK3IDBWuUn2ym4TGSGrMNpMA&export=download
-   * 
-   * 4:13:29 AM	Info	https://docs.google.com/presentation/d/1SxrZtzp_LaqBjVdcfGjoxrt7t-1Hggdwl0gewWpC_Mw/export/png
-   * 4:13:30 AM	Info	Direct Download Link: https://drive.google.com/uc?export=download&id=1SxrZtzp_LaqBjVdcfGjoxrt7t-1Hggdwl0gewWpC_Mw
-   */
+function createNewPass(row = LITERAL_SHEET.getLastRow()) {
+  const thisSheet = GET_LITERAL_SHEET();
+  const colSize = thisSheet.getLastColumn() - 1;    // ERROR_STATUS no needed
+
+  const headerKeys = thisSheet.getSheetValues(1, 1, 1, colSize)[0];
+  const newMemberValues = thisSheet.getRange(row, 1, 1, colSize).getDisplayValues()[0];
+  
+  // Package member information using key-values
+  const memberInformation = headerKeys.reduce(
+    (obj, key, i) => (obj[toCamelCase(key)]= newMemberValues[i], obj), {}
+  );
+
+  console.log(memberInformation);
+
+  // Try to send email and record status
+  const passUrl = createPassFile(memberInformation);
+  
+  thisSheet.getRange(row, COL_MAP.DIGITAL_PASS_URL).setValue(passUrl);
+  console.log(passUrl);
+
+  function toCamelCase(str) {
+  return str
+    .toLowerCase()
+    .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  }
 }
 
 
