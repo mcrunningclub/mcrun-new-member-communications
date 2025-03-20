@@ -29,7 +29,6 @@ THIS FILE HAS BEEN MODIFIED BY ANDREY GONZALEZ AS FOLLOWING:
 
 
 // Example function provided by Google
-// See 
 function inlineImage_() {
   const googleLogoUrl = 'https://www.gstatic.com/images/branding/googlelogo/1x/googlelogo_color_74x24dp.png';
   const youtubeLogoUrl = 'https://developers.google.com/youtube/images/YouTube_logo_standard_white.png';
@@ -48,13 +47,40 @@ function inlineImage_() {
 }
 
 
-function generateHtmlFromDraft() {
-  const subjectLine = 'Welcome to Our Running Club';
-  const datetime = Utilities.formatDate(new Date(), TIMEZONE, 'MMM-dd\'T\'hh-mm');
-  const fileName = `welcome-email-html-${datetime}`;
+/**
+ * User function to execute `generateHtmlFromDraft_`.
+ * 
+ * Must updated subject line as needed.
+ * 
+ */
 
+function saveDraftAsHtml() {
+  const subjectLine = 'Updated Digital Pass';
+  generateHtmlFromDraft_(subjectLine);
+}
+
+
+/**
+ * Generate html version of email found in draft using its subject line.
+ * 
+ * @param {string} subjectLine  Subject line of target draft.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * 
+ */
+
+function generateHtmlFromDraft_(subjectLine) {
+  const datetime = Utilities.formatDate(new Date(), TIMEZONE, 'MMM-dd\'T\'hh.mm');
+  const baseName = subjectLine.replace(/ /g, '-').toLowerCase();
+
+  // Create filename for html file
+  const fileName = `${baseName}-html-${datetime}`;
+
+  // Find template in drafts and get email objects
   const emailTemplate = getGmailTemplateFromDrafts(subjectLine);
   const msgObj = fillInTemplateFromObject_(emailTemplate.message, {});
+
+  // Save html file in drive
   DriveApp.createFile(fileName, msgObj.html);
 }
 
@@ -160,6 +186,11 @@ function sendEmail_(memberInformation) {
 */
 
 function getGmailTemplateFromDrafts(subjectLine = DRAFT_SUBJECT_LINE){
+  // Verify if McRUN draft to search
+  if (Session.getActiveUser().getEmail() != MCRUN_EMAIL) {
+    
+  }
+
   try {
     // Get the target draft, then message object
     const drafts = GmailApp.getDrafts();
