@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 
-function createPassFile(passInfo) {
+function createPassFile_(passInfo) {
   const TEMPLATE_ID = '14NG31db-g-bFX1OUHeRByTKN6S2QuMAkDuANOAtwF6o';   // Is not confidential
   const FOLDER_ID = '1_NVOD_HbXfzPl26lC_-jjytzaWXqLxTn';    // Is not confidential either
 
@@ -76,8 +76,8 @@ function createPassFile(passInfo) {
 
 
 function createNewPass(row = LITERAL_SHEET.getLastRow()) {
-  const thisSheet = GET_LITERAL_SHEET();
-  const colSize = thisSheet.getLastColumn() - 1;    // ERROR_STATUS no needed
+  const thisSheet = GET_LITERAL_SHEET_();
+  const colSize = thisSheet.getLastColumn() - 1;    // ERROR_STATUS not needed
 
   const headerKeys = thisSheet.getSheetValues(1, 1, 1, colSize)[0];
   const newMemberValues = thisSheet.getRange(row, 1, 1, colSize).getDisplayValues()[0];
@@ -90,15 +90,15 @@ function createNewPass(row = LITERAL_SHEET.getLastRow()) {
   console.log(memberInformation);
 
   // Try to send email and record status
-  const passUrl = createPassFile(memberInformation);
+  const passUrl = createPassFile_(memberInformation);
   
   thisSheet.getRange(row, COL_MAP.DIGITAL_PASS_URL).setValue(passUrl);
-  console.log(passUrl);
+  return passUrl;
 
   function toCamelCase(str) {
-  return str
-    .toLowerCase()
-    .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    return str
+      .toLowerCase()
+      .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
   }
 }
 
@@ -121,6 +121,7 @@ function testRuntime() {
   // Log the runtime
   Logger.log(`Function runtime: ${runtime} ms`);
 }
+
 
 function generateQrUrl_(memberID) {
   const baseUrl = 'https://quickchart.io/qr?';
@@ -156,5 +157,4 @@ function testQRGenerator_() {
 
   passFolder.createFile(qrCodeBlob).setName(`QRCode-test.png`);
 }
-
 

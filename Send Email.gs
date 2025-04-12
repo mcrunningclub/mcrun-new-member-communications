@@ -30,7 +30,7 @@ function sendWelcomeEmailInRow(row = LITERAL_SHEET.getLastRow()) {
     throw new Error('Wrong email. Please try using the club\'s account');
   }
 
-  const thisSheet = GET_LITERAL_SHEET();
+  const thisSheet = GET_LITERAL_SHEET_();
   const colSize = thisSheet.getLastColumn() - 1;    // ERROR_STATUS no needed
 
   const headerKeys = thisSheet.getSheetValues(1, 1, 1, colSize)[0];
@@ -49,7 +49,7 @@ function sendWelcomeEmailInRow(row = LITERAL_SHEET.getLastRow()) {
 
   // Try to send email and record status
   const returnStatus = sendWelcomeEmail_(memberInformation);
-  logMessage(returnStatus, thisSheet, row);
+  logMessage_(returnStatus, thisSheet, row);
 }
 
 
@@ -57,7 +57,6 @@ function sendWelcomeEmail_(memberInformation) {
   try {
     const TEMPLATE_NAME = 'Welcome Email';
     const CLUB_EMAIL = 'mcrunningclub@ssmu.ca';
-    const CLUB_NAME = 'McGill Students Running Club';
     const SUBJECT_LINE = 'Hi from McRUN 👋';
 
     // Prepare the HTML body from the template
@@ -101,21 +100,22 @@ function sendWelcomeEmail_(memberInformation) {
 }
 
 
-function sendSamosaEmailFromHTML(recipient, subject) {
+function sendUpdatedPass(member) {
   try {
-    const TEMPLATE_NAME = 'Samosa Email';
+    const TEMPLATE_NAME = 'Updated Pass Email';
     const CLUB_EMAIL = MCRUN_EMAIL;
-    const CLUB_NAME = 'McGill Students Running Club';
 
     // Prepare the HTML body from the template
     const template = HtmlService.createTemplateFromFile(TEMPLATE_NAME);
 
-    // Populate placeholders
+    // Populate member data
+    template.PASS_URL = member['passUrl'];
+    template.FIRST_NAME = member['firstName'];
+
+    // Add CID 
     template.LINKTREE_CID = 'linktreeLogo';
     template.HEADER_CID = 'emailHeader';
     template.STRAVA_CID = 'stravaLogo';
-    template.REGISTRATION_LINK = 'https://mcgill.ca/x/i4T';
-    template.THIS_YEAR = new Date().getFullYear();
 
     // Returns string content from populated html template
     const emailBodyHTML = template.evaluate().getContent();
@@ -125,15 +125,12 @@ function sendSamosaEmailFromHTML(recipient, subject) {
       emailHeader: getBlobFromProperties_('emailHeaderBlob'),
       linktreeLogo: getBlobFromProperties_('linktreeLogoBlob'),
       stravaLogo: getBlobFromProperties_('stravaLogoBlob'),
-      
-      // DriveApp call too expensive, better to cache in store
-      //emailHeader : DriveApp.getFileById('1ctHsQstsoHVyCH7XcbkUNjPEka9zV9L6').getBlob().setName('emailHeaderBlob'),
     };
 
     // Create message object
     const message = {
-      to: recipient,
-      subject: subject,
+      to: member['email'],
+      subject: 'Your updated digital pass',
       from: CLUB_EMAIL,
       name: CLUB_NAME,
       replyTo: CLUB_EMAIL,
@@ -142,8 +139,22 @@ function sendSamosaEmailFromHTML(recipient, subject) {
     };
 
     MailApp.sendEmail(message);
-    console.log(`Email sent successfully to ${recipient}`);
+    console.log(`[NMC] Email sent successfully to ${member['email']}`);
   } catch (error) {
-    console.error(`Error sending email: ${error}`);
+    console.error(`[NMC] Error sending email: ${error}`);
   }
+}
+
+
+function quickPassUpdate(row = 15) {
+  const sheet = GET_LITERAL_SHEET_();
+  const memberData = sheet.getSheetValues(row, 1, 1,  COL_MAP.DIGITAL_PASS_URL)[0];
+
+  sendUpdatedPass({
+    'firstName' :  memberData[COL_MAP.FIRST_NAME - 1],
+    'email' :  memberData[COL_MAP.EMAIL - 1],
+    'passUrl' :  memberData[COL_MAP.DIGITAL_PASS_URL - 1],
+  });
+
+  logMessage_('Sent updated pass!', sheet, row);
 }

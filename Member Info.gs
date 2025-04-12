@@ -19,20 +19,29 @@ const LITERAL_SHEET_NAME = 'Literals';
 const LITERAL_SHEET_ID = '1PrKth6f81Dx52bB3oPX1t55US-GnNRGve-TN4rU9Wlo';
 const LITERAL_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(LITERAL_SHEET_NAME);
 
+const PAYMENT_LOG_SHEET_NAME = 'Payment Logs';
+const PAYMENT_LOG_SHEET_ID = '1607079750';
+const PAYMENT_LOG_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(PAYMENT_LOG_SHEET_NAME);
+
 // EMAIL DRAFT CONSTANTS
-const DRAFT_SUBJECT_LINE = 'Welcome to McRun!';
-const DRAFT_ID = 'r-7747016114606374047';
+const DRAFT_SUBJECT_LINE = 'Here\'s your post-run report! 🙌';
+const DRAFT_ID = ''; 'r-7747016114606374047';
 
 // THIS IS AN ALTERNATE TEMPLATE (CURRENTLY NOT USED)
 const WELCOME_EMAIL_TEMPLATE_ID = '13hYRAbGSBVUzPTSzUl3Vao0RQJmjhWHHWoAku09j5iI';
 
 const TIMEZONE = getUserTimeZone_();
 const MCRUN_EMAIL = 'mcrunningclub@ssmu.ca';
+const CLUB_NAME = 'McGill Students Running Club';
 
 // ALLOWS PROPER SHEET REF WHEN ACCESSING AS LIBRARY FROM EXTERNAL SCRIPT
 // SpreadsheetApp.getActiveSpreadsheet() DOES NOT WORK IN EXTERNAL SCRIPT
-const GET_LITERAL_SHEET = () => {
-  return (LITERAL_SHEET) ? (LITERAL_SHEET) : SpreadsheetApp.openById(LITERAL_SHEET_ID).getSheetByName(LITERAL_SHEET_NAME);
+const GET_LITERAL_SHEET_ = () => {
+  return (LITERAL_SHEET) ?? SpreadsheetApp.openById(LITERAL_SHEET_ID).getSheetByName(LITERAL_SHEET_NAME);
+}
+
+const GET_PAYMENT_LOG_SHEET_ = () => {
+  return (PAYMENT_LOG_SHEET) ?? SpreadsheetApp.openById(LITERAL_SHEET_ID).getSheetByName(PAYMENT_LOG_SHEET_NAME);
 }
 
 // SHEET MAPPING
@@ -60,6 +69,12 @@ const IMPORT_MAP = {
   'passUrl': COL_MAP.DIGITAL_PASS_URL,
 }
 
+const PAYMENT_LOG_MAP = {
+  'timestamp' : 1,
+  'email' : 2,
+  'feeStatus' : 3,
+}
+
 
 function getUserTimeZone_() {
   return Session.getScriptTimeZone();
@@ -84,16 +99,16 @@ function getDraftById_(id = DRAFT_ID) {
 
 
 function createNewMemberCommunications(memberObj) {
-  const thisSheet = GET_LITERAL_SHEET();
+  const thisSheet = GET_LITERAL_SHEET_();
   console.log('Starting execution now...');
 
   try {
     // Append member info
-    const newRow = appendNewValues(memberObj, thisSheet);
+    const newRow = appendNewValues_(memberObj, thisSheet);
     console.log('Successfully imported values to row ' + newRow);
 
     // Create member pass 
-    const passUrl = createPassFile(memberObj);   // Get download url for member pass
+    const passUrl = createPassFile_(memberObj);   // Get download url for member pass
     console.log('Successfully created digital pass with url:\n' + passUrl);
 
     // Save url of digital pass to sheet and `memberObj`
@@ -104,16 +119,16 @@ function createNewMemberCommunications(memberObj) {
     // Send welcome email and log result
     const returnMessage = sendWelcomeEmail_(memberObj);
     console.log(returnMessage);
-    logMessage(returnMessage, thisSheet, newRow);
+    logMessage_(returnMessage, thisSheet, newRow);
   }
   catch(e) {
-    logMessage(e.message, thisSheet, newRow);
+    logMessage_(e.message, thisSheet, newRow);
     throw e;
   }
 }
 
 
-function appendNewValues(memberObj, thisSheet = GET_LITERAL_SHEET()) {
+function appendNewValues_(memberObj, thisSheet = GET_LITERAL_SHEET_()) {
   const importMap = IMPORT_MAP;
   const entries = Object.entries(memberObj)
   const valuesToAppend = Array(entries.length);
@@ -134,7 +149,90 @@ function appendNewValues(memberObj, thisSheet = GET_LITERAL_SHEET()) {
 }
 
 
-function logMessage(message, thisSheet =  GET_LITERAL_SHEET(), thisRow = thisSheet.getLastRow()) {
+function triggerUpdateAndSendPass(row = 2) {
+  const thisSheet = GET_PAYMENT_LOG_SHEET_();
+  const colSize = thisSheet.getLastColumn() - 1;    // ERROR_STATUS not needed
+
+  const headerKeys = thisSheet.getSheetValues(1, 1, 1, colSize)[0];
+  const newMemberValues = thisSheet.getRange(row, 1, 1, colSize).getDisplayValues()[0];
+  
+  // Package member information using key-values
+  const updated = headerKeys.reduce(
+    (obj, key, i) => (obj[toCamelCase(key)]= newMemberValues[i], obj), {}
+  );
+
+  console.log(updated);
+
+  // Try to send email and record status
+  updateAndSendPass(updated, true);
+
+  function toCamelCase(str) {
+    return str
+      .toLowerCase()
+      .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  }
+}
+
+
+function updateAndSendPass(statusObj, isLogged = false) {
+  // STEP 1: Add to payment logs
+  if (!isLogged) logPaymentStatus_(statusObj);
+
+  // STEP 2: Get existing member data
+  const literalsSheet = GET_LITERAL_SHEET_();
+  const email = statusObj['email'];
+  const targetRow = findRowByEmail_(email);
+
+  const memberData = literalsSheet.getSheetValues(targetRow, 1, 1,  COL_MAP.DIGITAL_PASS_URL)[0];
+ 
+  // STEP 3: Delete previous member pass
+  const oldPassUrl = memberData[COL_MAP.DIGITAL_PASS_URL - 1];
+  
+  if (oldPassUrl) {
+    const match = oldPassUrl.match(/\/d\/([^/]+)\/export/);
+    const fileId = match[1];
+    DriveApp.getFileById(fileId).setTrashed(true);
+  }
+  
+  // STEP 4: Update fee status
+  literalsSheet.getRange(targetRow, COL_MAP.FEE_STATUS).setValue(statusObj['feeStatus']);
+
+  // STEP 5: Create new pass and store url
+  const newPassUrl = createNewPass(targetRow);
+
+  // STEP 6: Send updated pass email
+  sendUpdatedPass({
+    'firstName' :  memberData[COL_MAP.FIRST_NAME - 1],
+    'email' :  email,
+    'passUrl' : newPassUrl,
+  });
+
+  logMessage_('Sent updated pass!', literalsSheet, targetRow);
+  Logger.log(`[NMC] Completed 'updateAndSendPass' and exiting`);
+}
+
+
+function logPaymentStatus_(status) {
+  const sheet = GET_PAYMENT_LOG_SHEET_();
+  const updatedRow = [];
+
+  // Map values from the status object to the correct indexes using PAYMENT_LOG_MAP
+  Object.entries(PAYMENT_LOG_MAP).forEach(([key, index]) => {
+    updatedRow[index - 1] = status[key];    // Turn 1-index to 0-index
+  });
+
+  sheet.appendRow(updatedRow);
+}
+
+
+function findRowByEmail_(targetEmail) {
+  const sheet = GET_LITERAL_SHEET_();
+  const allEmail = sheet.getRange(1, COL_MAP.EMAIL, sheet.getLastRow()).getValues();
+  return allEmail.findIndex(row => row[0] === targetEmail) + 1;  // 0 to 1-index
+}
+
+
+function logMessage_(message, thisSheet =  GET_LITERAL_SHEET_(), thisRow = thisSheet.getLastRow()) {
   // Update the status of email for new member
   const currentTime = Utilities.formatDate(new Date(), TIMEZONE, '[dd-MMM HH:mm:ss]');
   const statusRange = thisSheet.getRange(thisRow, COL_MAP.EMAIL_LOG);

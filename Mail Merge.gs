@@ -55,7 +55,7 @@ function inlineImage_() {
  */
 
 function saveDraftAsHtml() {
-  const subjectLine = 'Updated Digital Pass';
+  const subjectLine = 'Here\'s your post-run report! 🙌';
   generateHtmlFromDraft_(subjectLine);
 }
 
@@ -87,14 +87,18 @@ function generateHtmlFromDraft_(subjectLine) {
 
 function cacheBlobToStore() {
   //cacheBlobToProperties_('1ctHsQstsoHVyCH7XcbkUNjPEka9zV9L6', 'emailHeaderBlob');
-  cacheBlobToProperties_('1Im1c4-20Sx1xLlGgWKkTxXU9OXTKct8I', 'linktreeLogoBlob');
+  //cacheBlobToProperties_('1Im1c4-20Sx1xLlGgWKkTxXU9OXTKct8I', 'linktreeLogoBlob');
   //cacheBlobToProperties_('1rg72NxBtCAzQsKhCRx_Fb0azzoD8ztZ-', 'stravaLogoBlob');
+  cacheBlobToProperties_('1v8bSVxgM9rr5u1vjKB7qLEuaSu5xjgf2', 'runMapBlob');
 }
 
 
 function cacheBlobToProperties_(fileId, blobName) {
   const blob = DriveApp.getFileById(fileId).getBlob();
   const encodedBlob = Utilities.base64Encode(blob.getBytes());
+  console.log(encodedBlob);
+  return;
+  
   PropertiesService.getScriptProperties().setProperty(blobName, encodedBlob);
   console.log(`${blobName} cached in properties!`);
 }
@@ -188,7 +192,7 @@ function sendEmail_(memberInformation) {
 function getGmailTemplateFromDrafts(subjectLine = DRAFT_SUBJECT_LINE){
   // Verify if McRUN draft to search
   if (Session.getActiveUser().getEmail() != MCRUN_EMAIL) {
-    
+    return Logger.log('Change Gmail Account');
   }
 
   try {
