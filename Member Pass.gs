@@ -14,6 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/**
+ * Creates a digital pass file for a member using a Google Slides template, fills in member info, generates a QR code, and returns a download link.
+ *
+ * @param {Object} passInfo  The member information object (must include firstName, lastName, memberId, etc).
+ * @returns {string}  The download link for the generated pass PNG.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date 
+ */
 
 function createPassFile_(passInfo) {
   const TEMPLATE_ID = '14NG31db-g-bFX1OUHeRByTKN6S2QuMAkDuANOAtwF6o';   // Is not confidential
@@ -75,6 +84,17 @@ function createPassFile_(passInfo) {
 }
 
 
+/**
+ * Creates a new digital pass for a member at the given row, updates the sheet, and returns the pass URL.
+ *
+ * @param {number} [row=LITERAL_SHEET.getLastRow()]  The row number for the member.
+ * @returns {string}  The URL of the new digital pass.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date
+ * @update 
+ */
+
 function createNewPass(row = LITERAL_SHEET.getLastRow()) {
   const thisSheet = GET_LITERAL_SHEET_();
   const colSize = thisSheet.getLastColumn() - 1;    // ERROR_STATUS not needed
@@ -103,6 +123,13 @@ function createNewPass(row = LITERAL_SHEET.getLastRow()) {
 }
 
 
+/**
+ * Tests the runtime of generating a member pass and logs the result.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date 
+ */
+
 function testRuntime() {
   const memberEmail = 'emerson.darling@mail.mcgill.ca';
   const startTime = new Date().getTime();
@@ -123,6 +150,16 @@ function testRuntime() {
 }
 
 
+/**
+ * Generates a QR code URL for a given member ID using QuickChart API.
+ *
+ * @param {string} memberID  The member's unique ID.
+ * @returns {string}  The URL to the generated QR code image.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date 
+ */
+
 function generateQrUrl_(memberID) {
   const baseUrl = 'https://quickchart.io/qr?';
   const params = `text=${encodeURIComponent(memberID)}&margin=1&size=200`
@@ -130,6 +167,16 @@ function generateQrUrl_(memberID) {
   return baseUrl + params;
 }
 
+
+/**
+ * Fetches an image from a URL and returns it as a PNG blob if successful.
+ *
+ * @param {string} url  The URL of the image to fetch.
+ * @returns {Blob|undefined}  The image blob if successful, otherwise undefined.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date 
+ */
 
 function getImage_(url) {
   var response = UrlFetchApp.fetch(url).getResponseCode();
@@ -140,11 +187,28 @@ function getImage_(url) {
 }
 
 
+/**
+ * Loads the bytes of a Drive file by ID and returns them as a base64-encoded string.
+ *
+ * @param {string} id  The Drive file ID.
+ * @returns {string}  The base64-encoded bytes of the file.
+ * 
+ * @author  [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date 
+ */
+
 function loadImageBytes_(id) {
   var bytes = DriveApp.getFileById(id).getBlob().getBytes();
   return Utilities.base64Encode(bytes);
 }
 
+
+/**
+ * Tests the QR code generator by creating a QR code PNG in the pass folder.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date 
+ */
 
 function testQRGenerator_() {
   const FOLDER_ID = '1_NVOD_HbXfzPl26lC_-jjytzaWXqLxTn';
@@ -157,4 +221,3 @@ function testQRGenerator_() {
 
   passFolder.createFile(qrCodeBlob).setName(`QRCode-test.png`);
 }
-

@@ -53,6 +53,14 @@ function sendWelcomeEmailInRow(row = LITERAL_SHEET.getLastRow()) {
 }
 
 
+/**
+ * Sends a personalized welcome email to a new member using their information.
+ *
+ * @param {Object} memberInformation  Member information object (must include firstName, passUrl, email).
+ * @returns {string}  Status message indicating success or error.
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ */
+
 function sendWelcomeEmail_(memberInformation) {
   try {
     const TEMPLATE_NAME = 'Welcome Email';
@@ -100,6 +108,13 @@ function sendWelcomeEmail_(memberInformation) {
 }
 
 
+/**
+ * Sends an updated digital pass email to a member.
+ *
+ * @param {Object} member  Member information object (must include firstName, passUrl, email).
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ */
+
 function sendUpdatedPass(member) {
   try {
     const TEMPLATE_NAME = 'Updated Pass Email';
@@ -146,7 +161,14 @@ function sendUpdatedPass(member) {
 }
 
 
-function quickPassUpdate(row = 15) {
+/**
+ * Quickly sends an updated pass email for a member at the specified row and logs the action.
+ *
+ * @param {number} row  Row number to target.
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ */
+
+function quickPassUpdate(row) {
   const sheet = GET_LITERAL_SHEET_();
   const memberData = sheet.getSheetValues(row, 1, 1,  COL_MAP.DIGITAL_PASS_URL)[0];
 
