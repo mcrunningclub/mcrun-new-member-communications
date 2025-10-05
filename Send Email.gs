@@ -53,14 +53,6 @@ function sendWelcomeEmailInRow(row = LITERAL_SHEET.getLastRow()) {
 }
 
 
-/**
- * Sends a personalized welcome email to a new member using their information.
- *
- * @param {Object} memberInformation  Member information object (must include firstName, passUrl, email).
- * @returns {string}  Status message indicating success or error.
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- */
-
 function sendWelcomeEmail_(memberInformation) {
   try {
     const TEMPLATE_NAME = 'Welcome Email';
@@ -71,8 +63,8 @@ function sendWelcomeEmail_(memberInformation) {
     const template = HtmlService.createTemplateFromFile(TEMPLATE_NAME);
     
     template.THIS_YEAR = new Date().getFullYear();
-    template.FIRST_NAME = memberInformation['firstName'];
-    template.PASS_URL = memberInformation['passUrl'];
+    template.FIRST_NAME = memberInformation['firstName'] || memberInformation['FIRST_NAME'];
+    template.PASS_URL = memberInformation['passUrl'] || memberInformation['DIGITAL_PASS_URL'];
 
     template.LINKTREE_CID = 'linktreeLogo';
     template.HEADER_CID = 'emailHeader';
@@ -90,7 +82,7 @@ function sendWelcomeEmail_(memberInformation) {
 
     // Create message object
     const message = {
-      to: memberInformation['email'],
+      to: memberInformation['email'] || memberInformation['EMAIL'],
       subject: SUBJECT_LINE,
       from: CLUB_EMAIL,
       name: CLUB_NAME,
@@ -107,13 +99,6 @@ function sendWelcomeEmail_(memberInformation) {
   }
 }
 
-
-/**
- * Sends an updated digital pass email to a member.
- *
- * @param {Object} member  Member information object (must include firstName, passUrl, email).
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- */
 
 function sendUpdatedPass(member) {
   try {
@@ -161,15 +146,10 @@ function sendUpdatedPass(member) {
 }
 
 
-/**
- * Quickly sends an updated pass email for a member at the specified row and logs the action.
- *
- * @param {number} row  Row number to target.
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- */
-
-function quickPassUpdate(row) {
+function quickPassUpdate(row = 15) {
   const sheet = GET_LITERAL_SHEET_();
+  createNewPass(row);
+
   const memberData = sheet.getSheetValues(row, 1, 1,  COL_MAP.DIGITAL_PASS_URL)[0];
 
   sendUpdatedPass({

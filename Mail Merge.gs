@@ -27,10 +27,8 @@ THIS FILE HAS BEEN MODIFIED BY ANDREY GONZALEZ AS FOLLOWING:
   * Changed scope of helper functions to project-wide
 */
 
-/**
- * Sends an email with inline images as an example.
- */
 
+// Example function provided by Google
 function inlineImage_() {
   const googleLogoUrl = 'https://www.gstatic.com/images/branding/googlelogo/1x/googlelogo_color_74x24dp.png';
   const youtubeLogoUrl = 'https://developers.google.com/youtube/images/YouTube_logo_standard_white.png';
@@ -50,21 +48,25 @@ function inlineImage_() {
 
 
 /**
- * Saves the HTML content of a Gmail draft (by subject) as a file in Google Drive.
+ * User function to execute `generateHtmlFromDraft_`.
+ * 
+ * Must updated subject line as needed.
+ * 
  */
 
 function saveDraftAsHtml() {
-  const subjectLine = 'Here\'s your post-run report! 🙌';
+  const subjectLine = 'Welcome to Our Running Club';
   generateHtmlFromDraft_(subjectLine);
 }
 
 
 /**
- * Generates and saves the HTML version of an email draft found by subject line.
- *
- * @param {string} subjectLine  Subject line of the target draft.
+ * Generate html version of email found in draft using its subject line.
+ * 
+ * @param {string} subjectLine  Subject line of target draft.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * 
  */
 
 function generateHtmlFromDraft_(subjectLine) {
@@ -72,7 +74,7 @@ function generateHtmlFromDraft_(subjectLine) {
   const baseName = subjectLine.replace(/ /g, '-').toLowerCase();
 
   // Create filename for html file
-  const fileName = `${baseName}-html-${datetime}`;
+  const fileName = `${baseName}-${datetime}-html`;
 
   // Find template in drafts and get email objects
   const emailTemplate = getGmailTemplateFromDrafts(subjectLine);
@@ -83,10 +85,6 @@ function generateHtmlFromDraft_(subjectLine) {
 }
 
 
-/**
- * Caches a Drive file's blob to script properties for faster access.
- */
-
 function cacheBlobToStore() {
   //cacheBlobToProperties_('1ctHsQstsoHVyCH7XcbkUNjPEka9zV9L6', 'emailHeaderBlob');
   //cacheBlobToProperties_('1Im1c4-20Sx1xLlGgWKkTxXU9OXTKct8I', 'linktreeLogoBlob');
@@ -94,15 +92,6 @@ function cacheBlobToStore() {
   cacheBlobToProperties_('1v8bSVxgM9rr5u1vjKB7qLEuaSu5xjgf2', 'runMapBlob');
 }
 
-
-/**
- * Encodes a Drive file's blob and stores it in script properties.
- *
- * @param {string} fileId  The Drive file ID.
- * @param {string} blobName  The key to store the blob under.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- */
 
 function cacheBlobToProperties_(fileId, blobName) {
   const blob = DriveApp.getFileById(fileId).getBlob();
@@ -115,16 +104,6 @@ function cacheBlobToProperties_(fileId, blobName) {
 }
 
 
-/**
- * Retrieves a blob from script properties by key.
- *
- * @param {string} blobKey  The key for the stored blob.
- * @returns {Blob} The decoded blob.
- * @throws {Error} If the blob is not found.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- */
-
 function getBlobFromProperties_(blobKey) {
   const encodedBlob = PropertiesService.getScriptProperties().getProperty(blobKey);
   if (encodedBlob) {
@@ -133,10 +112,6 @@ function getBlobFromProperties_(blobKey) {
   throw new Error(`Blob ${blobKey} not found. Please add to script properties.`);
 }
 
-
-/**
- * Tests the runtime of sending an email using cached blobs vs DriveApp.
- */
 
 function testRuntime() {
   const recipient = 'andrey.gonzalez@mail.mcgill.ca';
@@ -161,15 +136,14 @@ function testRuntime() {
 
 
 /**
- * Sends an email using member information and a Gmail draft as a template.
- *
- * @author Martin Hawksey (2022)
- * @update [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) (2025)
- * @param {Object.<string, string>} memberInformation  Information to populate the email draft.
- * @returns {{message: string, isError: boolean}}  Status of sending email.
- * @throws {Error} If sending fails.
- */
-
+ * Sends email using member information.
+ * 
+ * @author  Martin Hawksey (2022)
+ * @update  [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) (2025)
+ * 
+ * @param {{key:value<string>}} memberInformation  Information to populate email draft
+ * @return {{message:string, isError:bool}}  Status of sending email.
+*/
 function sendEmail_(memberInformation) {
   // Gets the draft Gmail message to use as a template
   const subjectLine = DRAFT_SUBJECT_LINE;
@@ -206,15 +180,16 @@ function sendEmail_(memberInformation) {
 
 
 /**
- * Retrieves a Gmail draft message by matching the subject line.
- *
- * @author Martin Hawksey (2022)
- * @update Andrey Gonzalez (<andrey.gonzalez@mail.mcgill.ca>) (2025)
- * @param {string} [subjectLine=DRAFT_SUBJECT_LINE]  Subject line to search for draft message.
- * @returns {Object} Object containing the subject, plain and HTML message body, and inline images.
- * @throws {Error} If multiple or no drafts are found, or on other errors.
- */
-function getGmailTemplateFromDrafts(subjectLine = DRAFT_SUBJECT_LINE) {
+ * Get a Gmail draft message by matching the subject line.
+ * 
+ * @author  Martin Hawksey (2022)
+ * @update  [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) (2025)
+ * 
+ * @param {string} subjectLine to search for draft message
+ * @return {object} containing the subject, plain and html message body and attachments
+*/
+
+function getGmailTemplateFromDrafts(subjectLine = DRAFT_SUBJECT_LINE){
   // Verify if McRUN draft to search
   if (Session.getActiveUser().getEmail() != MCRUN_EMAIL) {
     return Logger.log('Change Gmail Account');
@@ -310,12 +285,16 @@ function getGmailTemplateFromDrafts(subjectLine = DRAFT_SUBJECT_LINE) {
 
 
 /**
- * Returns a filter function to match Gmail drafts by subject line.
- *
- * @param {string} subjectLine  The subject line to match.
- * @returns {function(Object): boolean}  Filter function for Gmail drafts.
- */
-function subjectFilter_(subjectLine) {
+ * Filter draft objects with the matching subject line message by matching the subject line.
+ * 
+ * @author  Martin Hawksey (2022)
+ * @update  [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) (2025)
+ * 
+ * @param {string} subjectLine to search for draft message
+ * @return {object} GmailDraft object
+*/
+
+function subjectFilter_(subjectLine){
   return function(element) {
     if (element.getMessage().getSubject() === subjectLine) {
       return element;
@@ -324,15 +303,17 @@ function subjectFilter_(subjectLine) {
 }
 
 /**
- * Fills a template string with data from an object and adds the current year.
- *
- * @author Martin Hawksey (2022)
- * @update Andrey Gonzalez (<andrey.gonzalez@mail.mcgill.ca>) (2025)
+ * Fill template string with data object and add current year.
+ * 
+ * @author  Martin Hawksey (2022)
+ * @update  [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) (2025)
  * @see https://stackoverflow.com/a/378000/1027723
- * @param {string} template  String containing {{}} markers to be replaced.
- * @param {Object} data  Object used to replace {{}} markers.
- * @returns {Object}  JSON-formatted message with replaced data.
- */
+ * 
+ * @param {string} template string containing {{}} markers which are replaced with data
+ * @param {object} data object used to replace {{}} markers
+ * @return {object} JSON-formatted message replaced with data
+*/
+
 function fillInTemplateFromObject_(template, data) {
   // We have two templates one for plain text and the html body
   // Stringifing the object means we can do a global replace
@@ -356,13 +337,15 @@ function fillInTemplateFromObject_(template, data) {
 }
 
 /**
- * Escapes cell data to make it JSON safe.
- *
- * @author Martin Hawksey (2022)
+ * Escape cell data to make JSON safe.
+ * 
+ * @author  Martin Hawksey (2022)
  * @see https://stackoverflow.com/a/9204218/1027723
- * @param {string} str  String to escape JSON special characters from.
- * @returns {string} Escaped string.
- */
+ * 
+ * @param {string} str to escape JSON special characters from
+ * @return {string} escaped string
+*/
+
 function escapeData_(str) {
   return str
     .replace(/[\\]/g, '\\\\')
@@ -374,3 +357,4 @@ function escapeData_(str) {
     .replace(/[\r]/g, '\\r')
     .replace(/[\t]/g, '\\t');
 }
+

@@ -25,7 +25,7 @@ const PAYMENT_LOG_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(P
 
 // EMAIL DRAFT CONSTANTS
 const DRAFT_SUBJECT_LINE = 'Here\'s your post-run report! 🙌';
-const DRAFT_ID = ''; //'r-7747016114606374047';
+const DRAFT_ID = ''; 'r-7747016114606374047';
 
 // THIS IS AN ALTERNATE TEMPLATE (CURRENTLY NOT USED)
 const WELCOME_EMAIL_TEMPLATE_ID = '13hYRAbGSBVUzPTSzUl3Vao0RQJmjhWHHWoAku09j5iI';
@@ -76,58 +76,27 @@ const PAYMENT_LOG_MAP = {
 }
 
 
-/**
- * Gets the user's time zone from the script settings.
- *
- * @returns {string} The user's time zone.
- */
-
 function getUserTimeZone_() {
   return Session.getScriptTimeZone();
 }
-
-/**
- * Gets the current user's email address.
- *
- * @returns {string} The current user's email address.
- */
 
 function getCurrentUserEmail_() {
   return Session.getActiveUser().toString();
 }
 
-/**
- * Retrieves a Gmail draft by subject line.
- *
- * @param {string} [subject=DRAFT_SUBJECT_LINE]  The subject line to search for.
- * @returns {GmailDraft} The first matching Gmail draft.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- */
 
 function getDraftBySubject_(subject = DRAFT_SUBJECT_LINE) {
-  return GmailApp.getDrafts().filter(subjectFilter_(subject))[0];
+  return GmailApp
+  .getDrafts()
+  .filter(
+    subjectFilter_(subject)
+  )[0];
 }
-
-/**
- * Retrieves a Gmail draft by its ID.
- *
- * @param {string} [id=DRAFT_ID] - The draft ID.
- * @returns {GmailDraft} The Gmail draft with the given ID.
- */
 
 function getDraftById_(id = DRAFT_ID) {
   return GmailApp.getDraft(id);
 }
 
-/**
- * Creates a new member's communications: appends info, creates pass, sends welcome email, and logs status.
- *
- * @param {Object} memberObj  The member information object.
- * @throws {Error} If any step fails.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- */
 
 function createNewMemberCommunications(memberObj) {
   const thisSheet = GET_LITERAL_SHEET_();
@@ -159,16 +128,6 @@ function createNewMemberCommunications(memberObj) {
 }
 
 
-/**
- * Appends new member values to the sheet and returns the new row index.
- *
- * @param {Object} memberObj  The member information object.
- * @param {Spreadsheet.Sheet} [thisSheet=GET_LITERAL_SHEET_()]  The sheet to append to.
- * @returns {number}  The new row index.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- */
-
 function appendNewValues_(memberObj, thisSheet = GET_LITERAL_SHEET_()) {
   const importMap = IMPORT_MAP;
   const entries = Object.entries(memberObj)
@@ -190,15 +149,7 @@ function appendNewValues_(memberObj, thisSheet = GET_LITERAL_SHEET_()) {
 }
 
 
-/**
- * Triggers an update and sends a new pass for the member at the given row in the payment log sheet.
- *
- * @param {number} row  The row number to process.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- */
-
-function triggerUpdateAndSendPass(row) {
+function triggerUpdateAndSendPass(row = 2) {
   const thisSheet = GET_PAYMENT_LOG_SHEET_();
   const colSize = thisSheet.getLastColumn() - 1;    // ERROR_STATUS not needed
 
@@ -222,15 +173,6 @@ function triggerUpdateAndSendPass(row) {
   }
 }
 
-
-/**
- * Updates member status, deletes old pass, creates new pass, sends updated pass email, and logs the action.
- *
- * @param {Object} statusObj  The status object containing member info.
- * @param {boolean} [isLogged=false]  Whether the payment status is already logged.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- */
 
 function updateAndSendPass(statusObj, isLogged = false) {
   // STEP 1: Add to payment logs
@@ -270,14 +212,6 @@ function updateAndSendPass(statusObj, isLogged = false) {
 }
 
 
-/**
- * Logs payment status to the payment log sheet.
- *
- * @param {Object} status  The status object containing payment info.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- */
-
 function logPaymentStatus_(status) {
   const sheet = GET_PAYMENT_LOG_SHEET_();
   const updatedRow = [];
@@ -291,31 +225,12 @@ function logPaymentStatus_(status) {
 }
 
 
-/**
- * Finds the row number of a member by their email address.
- *
- * @param {string} targetEmail  The email address to search for.
- * @returns {number}  The row number (1-indexed), or 0 if not found.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- */
-
 function findRowByEmail_(targetEmail) {
   const sheet = GET_LITERAL_SHEET_();
   const allEmail = sheet.getRange(1, COL_MAP.EMAIL, sheet.getLastRow()).getValues();
   return allEmail.findIndex(row => row[0] === targetEmail) + 1;  // 0 to 1-index
 }
 
-
-/**
- * Logs a message to the EMAIL_LOG column for a given row in the sheet.
- *
- * @param {string} message  The message to log.
- * @param {Spreadsheet.Sheet} [thisSheet=GET_LITERAL_SHEET_()]  The sheet to log to.
- * @param {number} [thisRow=thisSheet.getLastRow()]  The row to log the message for.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- */
 
 function logMessage_(message, thisSheet =  GET_LITERAL_SHEET_(), thisRow = thisSheet.getLastRow()) {
   // Update the status of email for new member
@@ -326,3 +241,4 @@ function logMessage_(message, thisSheet =  GET_LITERAL_SHEET_(), thisRow = thisS
   const previousValue = statusRange.getValue() ? statusRange.getValue() + '\n' : '';
   statusRange.setValue(`${previousValue}${currentTime}: ${message}`);
 }
+
