@@ -102,7 +102,7 @@ function sendWelcomeEmail_(memberInformation) {
 
 function sendUpdatedPass(member) {
   try {
-    const TEMPLATE_NAME = 'Updated Pass Email';
+    const TEMPLATE_NAME = 'Pass Email';
     const CLUB_EMAIL = MCRUN_EMAIL;
 
     // Prepare the HTML body from the template

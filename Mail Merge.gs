@@ -335,26 +335,3 @@ function fillInTemplateFromObject_(template, data) {
   } */
 
 }
-
-/**
- * Escape cell data to make JSON safe.
- * 
- * @author  Martin Hawksey (2022)
- * @see https://stackoverflow.com/a/9204218/1027723
- * 
- * @param {string} str to escape JSON special characters from
- * @return {string} escaped string
-*/
-
-function escapeData_(str) {
-  return str
-    .replace(/[\\]/g, '\\\\')
-    .replace(/[\"]/g, '\\\"')
-    .replace(/[\/]/g, '\\/')
-    .replace(/[\b]/g, '\\b')
-    .replace(/[\f]/g, '\\f')
-    .replace(/[\n]/g, '\\n')
-    .replace(/[\r]/g, '\\r')
-    .replace(/[\t]/g, '\\t');
-}
-

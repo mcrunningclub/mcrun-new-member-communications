@@ -2,9 +2,5 @@
   "timeZone": "America/Toronto",
   "dependencies": {},
   "exceptionLogging": "STACKDRIVER",
-  "runtimeVersion": "V8",
-  "webapp": {
-    "executeAs": "USER_ACCESSING",
-    "access": "ANYONE"
-  }
+  "runtimeVersion": "V8"
 }

@@ -94,12 +94,6 @@ function createNewPass(row = LITERAL_SHEET.getLastRow()) {
   
   thisSheet.getRange(row, COL_MAP.DIGITAL_PASS_URL).setValue(passUrl);
   return passUrl;
-
-  function toCamelCase(str) {
-    return str
-      .toLowerCase()
-      .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-  }
 }
 
 
