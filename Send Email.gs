@@ -49,7 +49,7 @@ function sendWelcomeEmailInRow(row = LITERAL_SHEET.getLastRow()) {
 
   // Try to send email and record status
   const returnStatus = sendWelcomeEmail_(memberInformation);
-  logMessage_(returnStatus, thisSheet, row);
+  logEmailStatus_(returnStatus, row);
 }
 
 
@@ -158,7 +158,7 @@ function quickPassUpdate(row = 15) {
     'passUrl' :  memberData[LITERALS.DIGITAL_PASS_URL - 1],
   });
 
-  logMessage_('Sent updated pass!', sheet, row);
+  logEmailStatus_('Sent updated pass!', row);
 }
 
 
@@ -214,7 +214,7 @@ function updateAndSendPass(statusObj, isLogged = false) {
     'passUrl' : newPassUrl,
   });
 
-  logMessage_('Sent updated pass!', literalsSheet, targetRow);
+  logEmailStatus_('Sent updated pass!', targetRow);
   Logger.log(`[NMC] Completed 'updateAndSendPass' and exiting`);
 }
 

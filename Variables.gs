@@ -139,11 +139,21 @@ const IMPORT_MAP = {
 }
 
 /**
- * Mapping from fields in payment log object to columns in Payment Log sheet (?)
+ * Mapping columns in Payment Logs sheet
+ * @const {Object}
+ */
+const PAYMENT_LOGS = {
+  TIMESTAMP : COL.A,
+  EMAIL : COL.B,
+  FEE_STATUS : COL.C
+}
+
+/**
+ * Mapping from fields in payment status object to columns in Payment Log sheet
  * @const {Object}
  */
 const PAYMENT_LOG_MAP = {
-  'timestamp' : 1,
-  'email' : 2,
-  'feeStatus' : 3,
+  'timestamp' : PAYMENT_LOGS.TIMESTAMP,
+  'email' : PAYMENT_LOGS.EMAIL,
+  'feeStatus' : PAYMENT_LOGS.FEE_STATUS,
 }

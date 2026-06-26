@@ -36,6 +36,18 @@ function escapeData_(str) {
 }
 
 /**
+ * Find row in Literals sheet that has the given email
+ * 
+ * @param {string} targetEmail  Email address to find
+ * @return {integer}  Row in Literals sheet (1-indexed), or 0 if email not found
+ */
+function findRowByEmail_(targetEmail) {
+  const sheet = GET_LITERAL_SHEET_();
+  const allEmail = sheet.getRange(1, LITERALS.EMAIL, sheet.getLastRow()).getValues();
+  return allEmail.findIndex(row => row[0] === targetEmail) + 1;  // 0 to 1-index
+}
+
+/**
  * Replaces snake case string with camel case string
  * 
  * @param {string} str  String in snake case, e.g. hello_world
