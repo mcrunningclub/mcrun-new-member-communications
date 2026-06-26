@@ -14,11 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
+/**
+ * Creates new pass from given member information
+ * 
+ * Add name, date, member ID, and QR code to copy of pass template,
+ * saves in folder with other passes, and get share link
+ * 
+ * @param {Object} passInfo  Member information to include in pass.
+ *                            Should include firstName, lastName, memberId
+ * @return {string}  Link to created pass
+ */
 function createPassFile_(passInfo) {
-  const TEMPLATE_ID = '14NG31db-g-bFX1OUHeRByTKN6S2QuMAkDuANOAtwF6o';   // Is not confidential
-  const FOLDER_ID = '1_NVOD_HbXfzPl26lC_-jjytzaWXqLxTn';    // Is not confidential either
-
   // Get the template presentation
   const template = DriveApp.getFileById(TEMPLATE_ID);
   const passFolder = DriveApp.getFolderById(FOLDER_ID);
@@ -48,7 +54,7 @@ function createPassFile_(passInfo) {
   const slide = copyFilePtr.getSlides()[0];
 
   // Create QR code
-  const qrCodeUrl = generateQrUrl_(passInfo.memberId);
+  const qrCodeUrl = createQrCodeUrl_(passInfo.memberId);
   const qrCodeBlob = UrlFetchApp.fetch(qrCodeUrl).getBlob();
 
   // Find shape with placeholder alt text and replace with qr code
@@ -74,8 +80,16 @@ function createPassFile_(passInfo) {
   return `https://docs.google.com/presentation/d/${copyID}/export/png`;   // Download link for user
 }
 
-
-function createNewPass(row = LITERAL_SHEET.getLastRow()) {
+/**
+ * Creates new pass from row in the Literals sheet
+ * 
+ * Packages row values into an object and calls createPassFile_,
+ * then adds created pass link into Literals sheet
+ * 
+ * @param {integer} row  Row to create pass for. Defaults to last row
+ * @return {string}  Link to created pass
+ */
+function createPassFromRow(row = LITERAL_SHEET.getLastRow()) {
   const thisSheet = GET_LITERAL_SHEET_();
   const colSize = thisSheet.getLastColumn() - 1;    // ERROR_STATUS not needed
 
@@ -89,10 +103,10 @@ function createNewPass(row = LITERAL_SHEET.getLastRow()) {
 
   console.log(memberInformation);
 
-  // Try to send email and record status
+  // Create pass and add link to column
   const passUrl = createPassFile_(memberInformation);
-  
   thisSheet.getRange(row, LITERALS.DIGITAL_PASS_URL).setValue(passUrl);
+  
   return passUrl;
 }
 
@@ -116,27 +130,19 @@ function testRuntime() {
   Logger.log(`Function runtime: ${runtime} ms`);
 }
 
-
-function generateQrUrl_(memberID) {
+/**
+ * Creates URL for QR code from given member ID
+ * 
+ * Uses quickchart.io
+ * 
+ * @param {string} memberID  Member ID
+ * @return {string}  URL for QR code
+ */
+function createQrCodeUrl_(memberID) {
   const baseUrl = 'https://quickchart.io/qr?';
   const params = `text=${encodeURIComponent(memberID)}&margin=1&size=200`
 
   return baseUrl + params;
-}
-
-
-function getImage_(url) {
-  var response = UrlFetchApp.fetch(url).getResponseCode();
-  if (response === 200) {
-    var img = UrlFetchApp.fetch(url).getAs('image/png');
-  }
-  return img;
-}
-
-
-function loadImageBytes_(id) {
-  var bytes = DriveApp.getFileById(id).getBlob().getBytes();
-  return Utilities.base64Encode(bytes);
 }
 
 
@@ -146,7 +152,7 @@ function testQRGenerator_() {
 
   const memberId = '1zIQfQzTj1h5FNSTttXn';
 
-  const qrCodeUrl = generateQrUrl_(memberId);
+  const qrCodeUrl = createQrCodeUrl_(memberId);
   const qrCodeBlob = UrlFetchApp.fetch(qrCodeUrl).getBlob();
 
   passFolder.createFile(qrCodeBlob).setName(`QRCode-test.png`);

@@ -148,7 +148,7 @@ function sendUpdatedPass(member) {
 
 function quickPassUpdate(row = 15) {
   const sheet = GET_LITERAL_SHEET_();
-  createNewPass(row);
+  createPassFromRow(row);
 
   const memberData = sheet.getSheetValues(row, 1, 1,  LITERALS.DIGITAL_PASS_URL)[0];
 
@@ -205,7 +205,7 @@ function updateAndSendPass(statusObj, isLogged = false) {
   literalsSheet.getRange(targetRow, LITERALS.FEE_STATUS).setValue(statusObj['feeStatus']);
 
   // STEP 5: Create new pass and store url
-  const newPassUrl = createNewPass(targetRow);
+  const newPassUrl = createPassFromRow(targetRow);
 
   // STEP 6: Send updated pass email
   sendUpdatedPass({

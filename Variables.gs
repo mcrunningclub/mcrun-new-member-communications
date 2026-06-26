@@ -35,6 +35,18 @@ const PAYMENT_LOG_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(P
 const WELCOME_EMAIL_DRAFT_ID = 'r-7747016114606374047';
 
 /**
+ * ID of file with pass template
+ * @const {string}
+ */
+const TEMPLATE_ID = '14NG31db-g-bFX1OUHeRByTKN6S2QuMAkDuANOAtwF6o';   // Is not confidential
+
+/**
+ * ID of folder to save passes in
+ * @const {string}
+ */
+const FOLDER_ID = '1_NVOD_HbXfzPl26lC_-jjytzaWXqLxTn';    // Is not confidential either
+
+/**
  * Timezone of script
  * @const {string}
  */
