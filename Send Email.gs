@@ -150,13 +150,115 @@ function quickPassUpdate(row = 15) {
   const sheet = GET_LITERAL_SHEET_();
   createNewPass(row);
 
-  const memberData = sheet.getSheetValues(row, 1, 1,  COL_MAP.DIGITAL_PASS_URL)[0];
+  const memberData = sheet.getSheetValues(row, 1, 1,  LITERALS.DIGITAL_PASS_URL)[0];
 
   sendUpdatedPass({
-    'firstName' :  memberData[COL_MAP.FIRST_NAME - 1],
-    'email' :  memberData[COL_MAP.EMAIL - 1],
-    'passUrl' :  memberData[COL_MAP.DIGITAL_PASS_URL - 1],
+    'firstName' :  memberData[LITERALS.FIRST_NAME - 1],
+    'email' :  memberData[LITERALS.EMAIL - 1],
+    'passUrl' :  memberData[LITERALS.DIGITAL_PASS_URL - 1],
   });
 
   logMessage_('Sent updated pass!', sheet, row);
+}
+
+
+function triggerUpdateAndSendPass(row = 2) {
+  const thisSheet = GET_PAYMENT_LOG_SHEET_();
+  const colSize = thisSheet.getLastColumn() - 1;    // ERROR_STATUS not needed
+
+  const headerKeys = thisSheet.getSheetValues(1, 1, 1, colSize)[0];
+  const newMemberValues = thisSheet.getRange(row, 1, 1, colSize).getDisplayValues()[0];
+  
+  // Package member information using key-values
+  const updated = headerKeys.reduce(
+    (obj, key, i) => (obj[toCamelCase(key)]= newMemberValues[i], obj), {}
+  );
+
+  console.log(updated);
+
+  // Try to send email and record status
+  updateAndSendPass(updated, true);
+}
+
+
+function updateAndSendPass(statusObj, isLogged = false) {
+  // STEP 1: Add to payment logs
+  if (!isLogged) logPaymentStatus_(statusObj);
+
+  // STEP 2: Get existing member data
+  const literalsSheet = GET_LITERAL_SHEET_();
+  const email = statusObj['email'];
+  const targetRow = findRowByEmail_(email);
+
+  const memberData = literalsSheet.getSheetValues(targetRow, 1, 1,  LITERALS.DIGITAL_PASS_URL)[0];
+ 
+  // STEP 3: Delete previous member pass
+  const oldPassUrl = memberData[LITERALS.DIGITAL_PASS_URL - 1];
+  
+  if (oldPassUrl) {
+    const match = oldPassUrl.match(/\/d\/([^/]+)\/export/);
+    const fileId = match[1];
+    DriveApp.getFileById(fileId).setTrashed(true);
+  }
+  
+  // STEP 4: Update fee status
+  literalsSheet.getRange(targetRow, LITERALS.FEE_STATUS).setValue(statusObj['feeStatus']);
+
+  // STEP 5: Create new pass and store url
+  const newPassUrl = createNewPass(targetRow);
+
+  // STEP 6: Send updated pass email
+  sendUpdatedPass({
+    'firstName' :  memberData[LITERALS.FIRST_NAME - 1],
+    'email' :  email,
+    'passUrl' : newPassUrl,
+  });
+
+  logMessage_('Sent updated pass!', literalsSheet, targetRow);
+  Logger.log(`[NMC] Completed 'updateAndSendPass' and exiting`);
+}
+
+
+/**
+ * Sends email using member information.
+ * 
+ * @author  Martin Hawksey (2022)
+ * @update  [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) (2025)
+ * 
+ * @param {{key:value<string>}} memberInformation  Information to populate email draft
+ * @param {string} draftSubject  Subject line of the email draft to use as template
+ * @return {{message:string, isError:bool}}  Status of sending email.
+*/
+function sendEmail_(memberInformation, draftSubject) {
+  // Gets the draft Gmail message to use as a template
+  const subjectLine = draftSubject;
+  const emailTemplate = getGmailTemplateFromDrafts(subjectLine);
+
+  try {
+    const memberEmail = memberInformation['EMAIL'];
+    const msgObj = fillInTemplateFromObject_(emailTemplate.message, memberInformation);
+
+    //DriveApp.createFile('TestFile3b', msgObj.html);
+
+    MailApp.sendEmail(
+      'andrey.gonzalez@mail.mcgill.ca',
+      msgObj.subject,
+      msgObj.text,
+      {
+        htmlBody: msgObj.html,
+        from: 'mcrunningclub@ssmu.ca',
+        name: 'McGill Students Running Club',
+        replyTo: 'mcrunningclub@ssmu.ca',
+        attachments: emailTemplate.attachments,
+        inlineImages: emailTemplate.inlineImages
+      }
+    );
+
+  } catch(e) {
+    // Log and return error
+    console.log(`(sendEmail) ${e.message}`);
+    throw new Error(e);
+  }
+  // Return success message
+  return {message: 'Sent!', isError : false};
 }

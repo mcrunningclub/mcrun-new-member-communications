@@ -28,7 +28,7 @@ function createNewMemberCommunications(memberObj) {
     console.log('Successfully created digital pass with url:\n' + passUrl);
 
     // Save url of digital pass to sheet and `memberObj`
-    thisSheet.getRange(newRow, COL_MAP.DIGITAL_PASS_URL).setValue(passUrl);
+    thisSheet.getRange(newRow, LITERALS.DIGITAL_PASS_URL).setValue(passUrl);
     memberObj['passUrl'] = passUrl;
     console.log('Successfully saved url to row ' + newRow);
 
@@ -64,64 +64,6 @@ function appendNewValues_(memberObj, thisSheet = GET_LITERAL_SHEET_()) {
   return newRow;
 }
 
-
-function triggerUpdateAndSendPass(row = 2) {
-  const thisSheet = GET_PAYMENT_LOG_SHEET_();
-  const colSize = thisSheet.getLastColumn() - 1;    // ERROR_STATUS not needed
-
-  const headerKeys = thisSheet.getSheetValues(1, 1, 1, colSize)[0];
-  const newMemberValues = thisSheet.getRange(row, 1, 1, colSize).getDisplayValues()[0];
-  
-  // Package member information using key-values
-  const updated = headerKeys.reduce(
-    (obj, key, i) => (obj[toCamelCase(key)]= newMemberValues[i], obj), {}
-  );
-
-  console.log(updated);
-
-  // Try to send email and record status
-  updateAndSendPass(updated, true);
-}
-
-
-function updateAndSendPass(statusObj, isLogged = false) {
-  // STEP 1: Add to payment logs
-  if (!isLogged) logPaymentStatus_(statusObj);
-
-  // STEP 2: Get existing member data
-  const literalsSheet = GET_LITERAL_SHEET_();
-  const email = statusObj['email'];
-  const targetRow = findRowByEmail_(email);
-
-  const memberData = literalsSheet.getSheetValues(targetRow, 1, 1,  COL_MAP.DIGITAL_PASS_URL)[0];
- 
-  // STEP 3: Delete previous member pass
-  const oldPassUrl = memberData[COL_MAP.DIGITAL_PASS_URL - 1];
-  
-  if (oldPassUrl) {
-    const match = oldPassUrl.match(/\/d\/([^/]+)\/export/);
-    const fileId = match[1];
-    DriveApp.getFileById(fileId).setTrashed(true);
-  }
-  
-  // STEP 4: Update fee status
-  literalsSheet.getRange(targetRow, COL_MAP.FEE_STATUS).setValue(statusObj['feeStatus']);
-
-  // STEP 5: Create new pass and store url
-  const newPassUrl = createNewPass(targetRow);
-
-  // STEP 6: Send updated pass email
-  sendUpdatedPass({
-    'firstName' :  memberData[COL_MAP.FIRST_NAME - 1],
-    'email' :  email,
-    'passUrl' : newPassUrl,
-  });
-
-  logMessage_('Sent updated pass!', literalsSheet, targetRow);
-  Logger.log(`[NMC] Completed 'updateAndSendPass' and exiting`);
-}
-
-
 function logPaymentStatus_(status) {
   const sheet = GET_PAYMENT_LOG_SHEET_();
   const updatedRow = [];
@@ -137,7 +79,7 @@ function logPaymentStatus_(status) {
 
 function findRowByEmail_(targetEmail) {
   const sheet = GET_LITERAL_SHEET_();
-  const allEmail = sheet.getRange(1, COL_MAP.EMAIL, sheet.getLastRow()).getValues();
+  const allEmail = sheet.getRange(1, LITERALS.EMAIL, sheet.getLastRow()).getValues();
   return allEmail.findIndex(row => row[0] === targetEmail) + 1;  // 0 to 1-index
 }
 
@@ -145,7 +87,7 @@ function findRowByEmail_(targetEmail) {
 function logMessage_(message, thisSheet =  GET_LITERAL_SHEET_(), thisRow = thisSheet.getLastRow()) {
   // Update the status of email for new member
   const currentTime = Utilities.formatDate(new Date(), TIMEZONE, '[dd-MMM HH:mm:ss]');
-  const statusRange = thisSheet.getRange(thisRow, COL_MAP.EMAIL_LOG);
+  const statusRange = thisSheet.getRange(thisRow, LITERALS.EMAIL_LOG);
 
   // Append status to previous value
   const previousValue = statusRange.getValue() ? statusRange.getValue() + '\n' : '';

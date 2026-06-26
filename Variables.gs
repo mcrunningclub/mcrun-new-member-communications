@@ -1,57 +1,135 @@
+/**
+ * Name of Literals sheet
+ * @const {string}
+ */
 const LITERAL_SHEET_NAME = 'Literals';
-const LITERAL_SHEET_ID = '1PrKth6f81Dx52bB3oPX1t55US-GnNRGve-TN4rU9Wlo';
+
+/**
+ * ID of New member comms spreadsheet
+ * @const {string}
+ */
+const SPREADSHEET_ID = '1PrKth6f81Dx52bB3oPX1t55US-GnNRGve-TN4rU9Wlo';
+
+/**
+ * Spreadsheet object of Literals sheet
+ * @const {SpreadsheetApp.Sheet}
+ */
 const LITERAL_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(LITERAL_SHEET_NAME);
 
+/**
+ * Name of Payment Logs sheet
+ * @const {string}
+ */
 const PAYMENT_LOG_SHEET_NAME = 'Payment Logs';
-const PAYMENT_LOG_SHEET_ID = '1607079750';
+
+/**
+ * Spreadsheet object of Payment Logs sheet
+ * @const {SpreadsheetApp.Sheet}
+ */
 const PAYMENT_LOG_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(PAYMENT_LOG_SHEET_NAME);
 
-// EMAIL DRAFT CONSTANTS
-const DRAFT_SUBJECT_LINE = 'Here\'s your post-run report! 🙌';
-const DRAFT_ID = ''; 'r-7747016114606374047';
+/**
+ * ID of email draft with welcome email template
+ * @const {string}
+ */
+const WELCOME_EMAIL_DRAFT_ID = 'r-7747016114606374047';
 
-// THIS IS AN ALTERNATE TEMPLATE (CURRENTLY NOT USED)
-const WELCOME_EMAIL_TEMPLATE_ID = '13hYRAbGSBVUzPTSzUl3Vao0RQJmjhWHHWoAku09j5iI';
-
+/**
+ * Timezone of script
+ * @const {string}
+ */
 const TIMEZONE = getUserTimeZone_();
+
+/**
+ * Club email
+ * @const {string}
+ */
 const MCRUN_EMAIL = 'mcrunningclub@ssmu.ca';
+
+/**
+ * Club name to include in "From" field for emails
+ * @const {string}
+ */
 const CLUB_NAME = 'McGill Students Running Club';
 
-// ALLOWS PROPER SHEET REF WHEN ACCESSING AS LIBRARY FROM EXTERNAL SCRIPT
-// SpreadsheetApp.getActiveSpreadsheet() DOES NOT WORK IN EXTERNAL SCRIPT
+/**
+ * Gets Literals sheet using spreadsheet ID if needed.
+ * 
+ * ALLOWS PROPER SHEET REF WHEN ACCESSING AS LIBRARY FROM EXTERNAL SCRIPT
+ * SpreadsheetApp.getActiveSpreadsheet() DOES NOT WORK IN EXTERNAL SCRIPT
+ * 
+ * @return {SpreadsheetApp.Sheet} Literals sheet object
+ */
 const GET_LITERAL_SHEET_ = () => {
-  return (LITERAL_SHEET) ?? SpreadsheetApp.openById(LITERAL_SHEET_ID).getSheetByName(LITERAL_SHEET_NAME);
+  return (LITERAL_SHEET) ?? SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(LITERAL_SHEET_NAME);
 }
 
+/**
+ * Gets Payment Logs sheet using spreadsheet ID if needed.
+ * 
+ * ALLOWS PROPER SHEET REF WHEN ACCESSING AS LIBRARY FROM EXTERNAL SCRIPT
+ * SpreadsheetApp.getActiveSpreadsheet() DOES NOT WORK IN EXTERNAL SCRIPT
+ * 
+ * @return {SpreadsheetApp.Sheet}  Payment Logs sheet object
+ */
 const GET_PAYMENT_LOG_SHEET_ = () => {
-  return (PAYMENT_LOG_SHEET) ?? SpreadsheetApp.openById(LITERAL_SHEET_ID).getSheetByName(PAYMENT_LOG_SHEET_NAME);
+  return (PAYMENT_LOG_SHEET) ?? SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(PAYMENT_LOG_SHEET_NAME);
 }
 
-// SHEET MAPPING
-const COL_MAP = {
-  EMAIL: 1,
-  FIRST_NAME: 2,
-  LAST_NAME: 3,
-  MEMBER_ID: 4,
-  MEMBER_STATUS: 5,
-  FEE_STATUS: 6,
-  EXPIRY_DATE: 7,
-  DIGITAL_PASS_URL: 8,
-  EMAIL_LOG: 9,
+/**
+ * Mapping column letters to numbers
+ * @const {Object}
+ */
+const COL = {
+  A: 1,
+  B: 2,
+  C: 3,
+  D: 4,
+  E: 5,
+  F: 6,
+  G: 7,
+  H: 8,
+  I: 9,
+  J: 10,
+  K: 11
+}
+
+/**
+ * Mapping columns in Literals sheet
+ * @const {Object}
+ */
+const LITERALS = {
+  EMAIL: COL.A,
+  FIRST_NAME: COL.B,
+  LAST_NAME: COL.C,
+  MEMBER_ID: COL.D,
+  MEMBER_STATUS: COL.E,
+  FEE_STATUS: COL.F,
+  EXPIRY_DATE: COL.G,
+  DIGITAL_PASS_URL: COL.H,
+  EMAIL_LOG: COL.I,
 };
 
-// MAPPING FROM MEMBER OBJ TO SHEET HEADER
+/**
+ * Mapping from keys in import object (from Membership Registry)
+ * to columns in Literals sheet
+ * @const {Object}
+ */
 const IMPORT_MAP = {
-  'email': COL_MAP.EMAIL,
-  'firstName': COL_MAP.FIRST_NAME,
-  'lastName': COL_MAP.LAST_NAME,
-  'memberId': COL_MAP.MEMBER_ID,
-  'memberStatus': COL_MAP.MEMBER_STATUS,
-  'feeStatus' : COL_MAP.FEE_STATUS,
-  'expiry': COL_MAP.EXPIRY_DATE,
-  'passUrl': COL_MAP.DIGITAL_PASS_URL,
+  'email': LITERALS.EMAIL,
+  'firstName': LITERALS.FIRST_NAME,
+  'lastName': LITERALS.LAST_NAME,
+  'memberId': LITERALS.MEMBER_ID,
+  'memberStatus': LITERALS.MEMBER_STATUS,
+  'feeStatus' : LITERALS.FEE_STATUS,
+  'expiry': LITERALS.EXPIRY_DATE,
+  'passUrl': LITERALS.DIGITAL_PASS_URL,
 }
 
+/**
+ * Mapping from fields in payment log object to columns in Payment Log sheet (?)
+ * @const {Object}
+ */
 const PAYMENT_LOG_MAP = {
   'timestamp' : 1,
   'email' : 2,

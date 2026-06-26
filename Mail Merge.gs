@@ -14,17 +14,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
-THIS FILE HAS BEEN MODIFIED BY ANDREY GONZALEZ AS FOLLOWING:
-- Reconfigured data retrieval of new member registrations
-- Removed `onOpen()` and menu creation for script executions
-- Deleted redundant comments
-- Renamed variables using camelCase
-
-- Modifications of `sendEmails`:
-  * Removed browser prompt
-  * Modified parameters to target row instead of sheet-wide
-  * Changed scope of helper functions to project-wide
 */
 
 
@@ -134,50 +123,17 @@ function testRuntime() {
 }
 
 
-
-/**
- * Sends email using member information.
- * 
- * @author  Martin Hawksey (2022)
- * @update  [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) (2025)
- * 
- * @param {{key:value<string>}} memberInformation  Information to populate email draft
- * @return {{message:string, isError:bool}}  Status of sending email.
-*/
-function sendEmail_(memberInformation) {
-  // Gets the draft Gmail message to use as a template
-  const subjectLine = DRAFT_SUBJECT_LINE;
-  const emailTemplate = getGmailTemplateFromDrafts(subjectLine);
-
-  try {
-    const memberEmail = memberInformation['EMAIL'];
-    const msgObj = fillInTemplateFromObject_(emailTemplate.message, memberInformation);
-
-    //DriveApp.createFile('TestFile3b', msgObj.html);
-
-    MailApp.sendEmail(
-      'andrey.gonzalez@mail.mcgill.ca',
-      msgObj.subject,
-      msgObj.text,
-      {
-        htmlBody: msgObj.html,
-        from: 'mcrunningclub@ssmu.ca',
-        name: 'McGill Students Running Club',
-        replyTo: 'mcrunningclub@ssmu.ca',
-        attachments: emailTemplate.attachments,
-        inlineImages: emailTemplate.inlineImages
-      }
-    );
-
-  } catch(e) {
-    // Log and return error
-    console.log(`(sendEmail) ${e.message}`);
-    throw new Error(e);
-  }
-  // Return success message
-  return {message: 'Sent!', isError : false};
+function getDraftBySubject_(subject = DRAFT_SUBJECT_LINE) {
+  return GmailApp
+  .getDrafts()
+  .filter(
+    subjectFilter_(subject)
+  )[0];
 }
 
+function getDraftById_(id = WELCOME_EMAIL_TEMPLATE_ID) {
+  return GmailApp.getDraft(id);
+}
 
 /**
  * Get a Gmail draft message by matching the subject line.

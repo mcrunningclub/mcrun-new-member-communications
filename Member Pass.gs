@@ -92,7 +92,7 @@ function createNewPass(row = LITERAL_SHEET.getLastRow()) {
   // Try to send email and record status
   const passUrl = createPassFile_(memberInformation);
   
-  thisSheet.getRange(row, COL_MAP.DIGITAL_PASS_URL).setValue(passUrl);
+  thisSheet.getRange(row, LITERALS.DIGITAL_PASS_URL).setValue(passUrl);
   return passUrl;
 }
 
