@@ -53,8 +53,53 @@ function findRowByEmail_(targetEmail) {
  * @param {string} str  String in snake case, e.g. hello_world
  * @return {string}  Input converted to camel case, e.g. helloWorld
  */
-function toCamelCase(str) {
+function toCamelCase_(str) {
   return str
     .toLowerCase()
     .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+/**
+ * Stores email header, linktree logo, strava logo, and run map images in script properties
+ */
+function cacheBlobToStore() {
+  //cacheBlobToProperties_('1ctHsQstsoHVyCH7XcbkUNjPEka9zV9L6', 'emailHeaderBlob');
+  //cacheBlobToProperties_('1Im1c4-20Sx1xLlGgWKkTxXU9OXTKct8I', 'linktreeLogoBlob');
+  //cacheBlobToProperties_('1rg72NxBtCAzQsKhCRx_Fb0azzoD8ztZ-', 'stravaLogoBlob');
+  cacheBlobToProperties_('1v8bSVxgM9rr5u1vjKB7qLEuaSu5xjgf2', 'runMapBlob');
+}
+
+/**
+ * Stores given Google Drive file in script properties under given name
+ * 
+ * Gets blob from file, outputs encoded string in console. Need to manually add
+ * to script properties.
+ * 
+ * @param {string} fileId  ID of file to store
+ * @param {string} blobName  Name of property to store encoded file under
+ */
+function cacheBlobToProperties_(fileId, blobName) {
+  const blob = DriveApp.getFileById(fileId).getBlob();
+  const encodedBlob = Utilities.base64Encode(blob.getBytes());
+  console.log(encodedBlob);
+  return;
+  
+  PropertiesService.getScriptProperties().setProperty(blobName, encodedBlob);
+  console.log(`${blobName} cached in properties!`);
+}
+
+/**
+ * Fetches and decodes image blob from script properties using given name
+ * 
+ * Throws error if not found.
+ * 
+ * @param {string} blobName  Name of property that stores the image
+ * @return {Image}  Blob decoded as png
+ */
+function getBlobFromProperties_(blobName) {
+  const encodedBlob = PropertiesService.getScriptProperties().getProperty(blobName);
+  if (encodedBlob) {
+    return Utilities.newBlob(Utilities.base64Decode(encodedBlob), 'image/png', blobName);
+  }
+  throw new Error(`Blob ${blobName} not found. Please add to script properties.`);
 }

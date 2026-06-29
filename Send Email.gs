@@ -24,8 +24,7 @@ limitations under the License.
  * @param {integer} row  Row to target for information
  * @error  Error status of sending email.
 */
-
-function sendWelcomeEmailInRow(row = LITERAL_SHEET.getLastRow()) {
+function sendWelcomeEmailInRow(row) {
   if(getCurrentUserEmail_() !== 'mcrunningclub@ssmu.ca') {
     throw new Error('Wrong email. Please try using the club\'s account');
   }
@@ -52,10 +51,20 @@ function sendWelcomeEmailInRow(row = LITERAL_SHEET.getLastRow()) {
   logEmailStatus_(returnStatus, row);
 }
 
-
+/**
+ * Sends welcome email to member using template and member info.
+ * 
+ * Gets member information and image blobs stored in script properties,
+ * populates template, and sends email.
+ * 
+ * @param {Object} memberInformation  Object containing member information from Literals
+ * @return {string}  "Successfully sent!" if email sent, otherwise error message
+ */
 function sendWelcomeEmail_(memberInformation) {
   try {
+    // Name of html file (without .html extension) in the apps script project
     const TEMPLATE_NAME = 'Welcome Email';
+
     const CLUB_EMAIL = 'mcrunningclub@ssmu.ca';
     const SUBJECT_LINE = 'Hi from McRUN 👋';
 
@@ -99,18 +108,27 @@ function sendWelcomeEmail_(memberInformation) {
   }
 }
 
-
-function sendUpdatedPass(member) {
+/**
+ * Sends updated pass email to member using template and member info.
+ * 
+ * Gets member information and image blobs stored in script properties,
+ * populates template, sends email, and log to console if successful or not.
+ * 
+ * @param {Object} memberInformation  Object containing member information from Literals
+ */
+function sendUpdatedPass_(memberInformation) {
   try {
+    // Name of html file (without .html extension) in the apps script project
     const TEMPLATE_NAME = 'Pass Email';
+
     const CLUB_EMAIL = MCRUN_EMAIL;
 
     // Prepare the HTML body from the template
     const template = HtmlService.createTemplateFromFile(TEMPLATE_NAME);
 
     // Populate member data
-    template.PASS_URL = member['passUrl'];
-    template.FIRST_NAME = member['firstName'];
+    template.PASS_URL = memberInformation['passUrl'];
+    template.FIRST_NAME = memberInformation['firstName'];
 
     // Add CID 
     template.LINKTREE_CID = 'linktreeLogo';
@@ -129,7 +147,7 @@ function sendUpdatedPass(member) {
 
     // Create message object
     const message = {
-      to: member['email'],
+      to: memberInformation['email'],
       subject: 'Your updated digital pass',
       from: CLUB_EMAIL,
       name: CLUB_NAME,
@@ -139,20 +157,25 @@ function sendUpdatedPass(member) {
     };
 
     MailApp.sendEmail(message);
-    console.log(`[NMC] Email sent successfully to ${member['email']}`);
+    console.log(`[NMC] Email sent successfully to ${memberInformation['email']}`);
   } catch (error) {
     console.error(`[NMC] Error sending email: ${error}`);
   }
 }
 
-
+/**
+ * Update pass using member information from given row in Literals sheet,
+ * and sends an email with the new pass.
+ * 
+ * @param {number} row  Row of member to update pass for. Defaults to 15 (dunno why)
+ */
 function quickPassUpdate(row = 15) {
   const sheet = GET_LITERAL_SHEET_();
   createPassFromRow(row);
 
   const memberData = sheet.getSheetValues(row, 1, 1,  LITERALS.DIGITAL_PASS_URL)[0];
 
-  sendUpdatedPass({
+  sendUpdatedPass_({
     'firstName' :  memberData[LITERALS.FIRST_NAME - 1],
     'email' :  memberData[LITERALS.EMAIL - 1],
     'passUrl' :  memberData[LITERALS.DIGITAL_PASS_URL - 1],
@@ -161,7 +184,11 @@ function quickPassUpdate(row = 15) {
   logEmailStatus_('Sent updated pass!', row);
 }
 
-
+/**
+ * Sends new pass to member from given row in Payment Logs sheet.
+ * 
+ * @param {number} row  Row of member to update pass for. Defaults to 2 (???)
+ */
 function triggerUpdateAndSendPass(row = 2) {
   const thisSheet = GET_PAYMENT_LOG_SHEET_();
   const colSize = thisSheet.getLastColumn() - 1;    // ERROR_STATUS not needed
@@ -171,17 +198,27 @@ function triggerUpdateAndSendPass(row = 2) {
   
   // Package member information using key-values
   const updated = headerKeys.reduce(
-    (obj, key, i) => (obj[toCamelCase(key)]= newMemberValues[i], obj), {}
+    (obj, key, i) => (obj[toCamelCase_(key)]= newMemberValues[i], obj), {}
   );
 
   console.log(updated);
 
   // Try to send email and record status
-  updateAndSendPass(updated, true);
+  updateAndSendPass_(updated, true);
 }
 
 
-function updateAndSendPass(statusObj, isLogged = false) {
+/**
+ * Sends pass given payment status object.
+ * 
+ * Finds existing member data from literals sheet, deletes old pass
+ * and creates new one, and sends email to member
+ * 
+ * @param {Object} statusObj  Payment status, including 'email' and 'fee status'
+ * @param {boolean} isLogged  Whether the status has been added to Payment Logs sheet.
+ *                              Determines whether to add it or not. Default false.
+ */
+function updateAndSendPass_(statusObj, isLogged = false) {
   // STEP 1: Add to payment logs
   if (!isLogged) logPaymentStatus_(statusObj);
 
@@ -208,7 +245,7 @@ function updateAndSendPass(statusObj, isLogged = false) {
   const newPassUrl = createPassFromRow(targetRow);
 
   // STEP 6: Send updated pass email
-  sendUpdatedPass({
+  sendUpdatedPass_({
     'firstName' :  memberData[LITERALS.FIRST_NAME - 1],
     'email' :  email,
     'passUrl' : newPassUrl,
@@ -220,23 +257,26 @@ function updateAndSendPass(statusObj, isLogged = false) {
 
 
 /**
- * Sends email using member information.
+ * Sends email from template in drafts using member information.
+ * 
+ * Finds draft using subject and gets template from it, then fills
+ * in member information and creates a new email to send.
+ * Throws error and logs it in console if error occurs during sending. 
  * 
  * @author  Martin Hawksey (2022)
  * @update  [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) (2025)
  * 
- * @param {{key:value<string>}} memberInformation  Information to populate email draft
+ * @param {Object} memberInformation  Information to populate email draft
  * @param {string} draftSubject  Subject line of the email draft to use as template
  * @return {{message:string, isError:bool}}  Status of sending email.
 */
 function sendEmail_(memberInformation, draftSubject) {
   // Gets the draft Gmail message to use as a template
-  const subjectLine = draftSubject;
-  const emailTemplate = getGmailTemplateFromDrafts(subjectLine);
+  const emailTemplate = getTemplateFromDraft_(draftSubject);
 
   try {
     const memberEmail = memberInformation['EMAIL'];
-    const msgObj = fillInTemplateFromObject_(emailTemplate.message, memberInformation);
+    const msgObj = fillInTemplate(emailTemplate.message, memberInformation);
 
     //DriveApp.createFile('TestFile3b', msgObj.html);
 

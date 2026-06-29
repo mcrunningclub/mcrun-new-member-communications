@@ -52,6 +52,8 @@ function saveDraftAsHtml() {
 /**
  * Generate html version of email found in draft using its subject line.
  * 
+ * Saves html under {draft subject}-{datetime}-html in Google Drive.
+ * 
  * @param {string} subjectLine  Subject line of target draft.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
@@ -66,73 +68,11 @@ function generateHtmlFromDraft_(subjectLine) {
   const fileName = `${baseName}-${datetime}-html`;
 
   // Find template in drafts and get email objects
-  const emailTemplate = getGmailTemplateFromDrafts(subjectLine);
-  const msgObj = fillInTemplateFromObject_(emailTemplate.message, {});
+  const emailTemplate = getTemplateFromDraft_(subjectLine);
+  const msgObj = fillInTemplate(emailTemplate.message, {});
 
   // Save html file in drive
   DriveApp.createFile(fileName, msgObj.html);
-}
-
-
-function cacheBlobToStore() {
-  //cacheBlobToProperties_('1ctHsQstsoHVyCH7XcbkUNjPEka9zV9L6', 'emailHeaderBlob');
-  //cacheBlobToProperties_('1Im1c4-20Sx1xLlGgWKkTxXU9OXTKct8I', 'linktreeLogoBlob');
-  //cacheBlobToProperties_('1rg72NxBtCAzQsKhCRx_Fb0azzoD8ztZ-', 'stravaLogoBlob');
-  cacheBlobToProperties_('1v8bSVxgM9rr5u1vjKB7qLEuaSu5xjgf2', 'runMapBlob');
-}
-
-
-function cacheBlobToProperties_(fileId, blobName) {
-  const blob = DriveApp.getFileById(fileId).getBlob();
-  const encodedBlob = Utilities.base64Encode(blob.getBytes());
-  console.log(encodedBlob);
-  return;
-  
-  PropertiesService.getScriptProperties().setProperty(blobName, encodedBlob);
-  console.log(`${blobName} cached in properties!`);
-}
-
-
-function getBlobFromProperties_(blobKey) {
-  const encodedBlob = PropertiesService.getScriptProperties().getProperty(blobKey);
-  if (encodedBlob) {
-    return Utilities.newBlob(Utilities.base64Decode(encodedBlob), 'image/png', blobKey);
-  }
-  throw new Error(`Blob ${blobKey} not found. Please add to script properties.`);
-}
-
-
-function testRuntime() {
-  const recipient = 'andrey.gonzalez@mail.mcgill.ca';
-  const startTime = new Date().getTime();
-
-  // Runtime if using DriveApp call : 1200ms
-  // If caching images in script properties once: 550 ms
-  sendSamosaEmailFromHTML(recipient, 'Test 5 samosa sale');
-
-  //sendSamosaEmail();    // around 3000ms
-  
-  // Record the end time
-  const endTime = new Date().getTime();
-  
-  // Calculate the runtime in milliseconds
-  const runtime = endTime - startTime;
-  
-  // Log the runtime
-  Logger.log(`Function runtime: ${runtime} ms`);
-}
-
-
-function getDraftBySubject_(subject = DRAFT_SUBJECT_LINE) {
-  return GmailApp
-  .getDrafts()
-  .filter(
-    subjectFilter_(subject)
-  )[0];
-}
-
-function getDraftById_(id = WELCOME_EMAIL_TEMPLATE_ID) {
-  return GmailApp.getDraft(id);
 }
 
 /**
@@ -145,7 +85,7 @@ function getDraftById_(id = WELCOME_EMAIL_TEMPLATE_ID) {
  * @return {object} containing the subject, plain and html message body and attachments
 */
 
-function getGmailTemplateFromDrafts(subjectLine = DRAFT_SUBJECT_LINE){
+function getTemplateFromDraft_(subjectLine){
   // Verify if McRUN draft to search
   if (Session.getActiveUser().getEmail() != MCRUN_EMAIL) {
     return Logger.log('Change Gmail Account');
@@ -246,8 +186,8 @@ function getGmailTemplateFromDrafts(subjectLine = DRAFT_SUBJECT_LINE){
  * @author  Martin Hawksey (2022)
  * @update  [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) (2025)
  * 
- * @param {string} subjectLine to search for draft message
- * @return {object} GmailDraft object
+ * @param {string} subject  Line to search for draft message
+ * @return {object} Gmail  Draft object
 */
 
 function subjectFilter_(subjectLine){
@@ -270,7 +210,7 @@ function subjectFilter_(subjectLine){
  * @return {object} JSON-formatted message replaced with data
 */
 
-function fillInTemplateFromObject_(template, data) {
+function fillInTemplate(template, data) {
   // We have two templates one for plain text and the html body
   // Stringifing the object means we can do a global replace
   let templateStr = JSON.stringify(template);
@@ -290,4 +230,24 @@ function fillInTemplateFromObject_(template, data) {
     templateStr = templateStr.replace(regex, safeValue);
   } */
 
+}
+
+function testRuntime() {
+  const recipient = 'andrey.gonzalez@mail.mcgill.ca';
+  const startTime = new Date().getTime();
+
+  // Runtime if using DriveApp call : 1200ms
+  // If caching images in script properties once: 550 ms
+  sendSamosaEmailFromHTML(recipient, 'Test 5 samosa sale');
+
+  //sendSamosaEmail();    // around 3000ms
+  
+  // Record the end time
+  const endTime = new Date().getTime();
+  
+  // Calculate the runtime in milliseconds
+  const runtime = endTime - startTime;
+  
+  // Log the runtime
+  Logger.log(`Function runtime: ${runtime} ms`);
 }

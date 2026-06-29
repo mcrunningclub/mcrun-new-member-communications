@@ -26,8 +26,8 @@ limitations under the License.
  */
 function createPassFile_(passInfo) {
   // Get the template presentation
-  const template = DriveApp.getFileById(TEMPLATE_ID);
-  const passFolder = DriveApp.getFolderById(FOLDER_ID);
+  const template = DriveApp.getFileById(PASS_TEMPLATE_ID);
+  const passFolder = DriveApp.getFolderById(PASS_FOLDER_ID);
 
   // Use information to create custom file name
   const memberName = `${passInfo.firstName}-${passInfo.lastName}`;
@@ -98,7 +98,7 @@ function createPassFromRow(row = LITERAL_SHEET.getLastRow()) {
   
   // Package member information using key-values
   const memberInformation = headerKeys.reduce(
-    (obj, key, i) => (obj[toCamelCase(key)]= newMemberValues[i], obj), {}
+    (obj, key, i) => (obj[toCamelCase_(key)]= newMemberValues[i], obj), {}
   );
 
   console.log(memberInformation);
